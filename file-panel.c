@@ -474,6 +474,16 @@ cmd_open_file_exec(struct cmd *self, struct cmdq_item *item)
 	values[3] = command;
 	cmd = file_panel_template(options_get_string(s->options,
 	    "file-open-command"), "fdnc", values);
+
+	/* Keep a terminal under the file, in its directory. */
+	if (!is_dir && options_get_number(s->options, "file-open-terminal")) {
+		xasprintf(&value, "%s ; split-window -v -l %lld%% -c %s ; "
+		    "select-pane -U", cmd,
+		    options_get_number(s->options, "file-open-terminal-size"),
+		    edir);
+		free(cmd);
+		cmd = value;
+	}
 	free(epath);
 	free(edir);
 	free(ename);

@@ -1084,6 +1084,24 @@ const struct options_table_entry options_table[] = {
 		  "'%1' is replaced by the path, quoted for the shell."
 	},
 
+	{ .name = "file-open-terminal",
+	  .type = OPTIONS_TABLE_FLAG,
+	  .scope = OPTIONS_TABLE_SESSION,
+	  .default_num = 1,
+	  .text = "Whether 'open-file' adds a terminal pane in the file's "
+		  "directory below the editor or viewer."
+	},
+
+	{ .name = "file-open-terminal-size",
+	  .type = OPTIONS_TABLE_NUMBER,
+	  .scope = OPTIONS_TABLE_SESSION,
+	  .minimum = 10,
+	  .maximum = 90,
+	  .default_num = 30,
+	  .unit = "percent",
+	  .text = "Height of the terminal pane added by 'open-file'."
+	},
+
 	{ .name = "file-panel-code-style",
 	  .type = OPTIONS_TABLE_STRING,
 	  .scope = OPTIONS_TABLE_SESSION,
