@@ -47,8 +47,8 @@ const struct cmd_entry cmd_open_file_entry = {
 	.description = "Open a file or directory in a new window.",
 	.alias = NULL,
 
-	.args = { "i:t:", 0, 1, NULL },
-	.usage = "[-i index] " CMD_TARGET_PANE_USAGE " [path]",
+	.args = { "ei:t:", 0, 1, NULL },
+	.usage = "[-e] [-i index] " CMD_TARGET_PANE_USAGE " [path]",
 
 	.target = { 't', CMD_FIND_PANE, 0 },
 
@@ -347,25 +347,57 @@ file_panel_editor(void)
 }
 
 /* The command to open a path: editor, viewer, or a shell for directories. */
-static char *
-file_panel_command(struct session *s, const char *path, int is_dir)
+/* Is this a Markdown file? */
+static int
+file_panel_markdown(const char *path)
 {
-	const char	*keys = "1";
+	static const char	*exts[] = { "md", "markdown", "mdown", "mkd",
+				    NULL };
+	const char		*ext, **e;
+
+	ext = strrchr(path, '.');
+	if (ext == NULL || strchr(ext, '/') != NULL)
+		return (0);
+	for (e = exts; *e != NULL; e++) {
+		if (strcasecmp(ext + 1, *e) == 0)
+			return (1);
+	}
+	return (0);
+}
+
+/* Run a shell command template with %1 as the quoted path. */
+static char *
+file_panel_shell(struct session *s, const char *option, const char *path)
+{
 	const char	*values[1];
-	char		*quoted, *shell, *escaped, *editor, *cmd;
+	char		*quoted, *shell, *cmd;
+
+	quoted = file_panel_shell_quote(path);
+	values[0] = quoted;
+	shell = file_panel_template(options_get_string(s->options, option), "1",
+	    values);
+	free(quoted);
+	cmd = args_escape(shell);
+	free(shell);
+	return (cmd);
+}
+
+/*
+ * The command to open a path: a shell for a directory, the Markdown viewer
+ * or the binary viewer, or the editor (always, if edit is set).
+ */
+static char *
+file_panel_command(struct session *s, const char *path, int is_dir, int edit)
+{
+	char	*escaped, *editor, *cmd;
 
 	if (is_dir)
 		return (xstrdup(""));
-	if (file_panel_binary(path)) {
-		quoted = file_panel_shell_quote(path);
-		values[0] = quoted;
-		shell = file_panel_template(options_get_string(s->options,
-		    "file-view-command"), keys, values);
-		free(quoted);
-		cmd = args_escape(shell);
-		free(shell);
-		return (cmd);
-	}
+	if (!edit && file_panel_markdown(path) &&
+	    *options_get_string(s->options, "file-markdown-command") != '\0')
+		return (file_panel_shell(s, "file-markdown-command", path));
+	if (!edit && file_panel_binary(path))
+		return (file_panel_shell(s, "file-view-command", path));
 	editor = file_panel_editor();
 	escaped = args_escape(path);
 	xasprintf(&cmd, "%s %s", editor, escaped);
@@ -546,7 +578,7 @@ cmd_open_file_exec(struct cmd *self, struct cmdq_item *item)
 				*slash = '\0';
 		}
 		edir = args_escape(dir);
-		command = file_panel_command(s, path, is_dir);
+		command = file_panel_command(s, path, is_dir, args_has(args, 'e'));
 		cmd = file_panel_open_side(target, path, edir, command);
 		free(command);
 		free(edir);
@@ -574,7 +606,7 @@ cmd_open_file_exec(struct cmd *self, struct cmdq_item *item)
 	epath = args_escape(path);
 	edir = args_escape(dir);
 	ename = args_escape(label);
-	command = file_panel_command(s, path, is_dir);
+	command = file_panel_command(s, path, is_dir, args_has(args, 'e'));
 	values[0] = epath;
 	values[1] = edir;
 	values[2] = ename;

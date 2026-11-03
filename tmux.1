@@ -1702,6 +1702,7 @@ the file is parsed but no commands are executed.
 shows the parsed commands and line numbers if possible.
 .Tg start
 .It Xo Ic open\-file
+.Op Fl e
 .Op Fl i Ar index
 .Op Fl t Ar target\-pane
 .Op Ar path
@@ -1711,10 +1712,14 @@ Open a file or directory, by default as a pane in the current window
 .Ic file\-open\-mode ) :
 a text file with the
 .Ic editor ,
+a Markdown file with
+.Ic file\-markdown\-command ,
 a binary file with
 .Ic file\-view\-command
 and a directory with a shell.
 If it is already open, it is shown again instead.
+.Fl e
+always uses the editor.
 With
 .Fl i ,
 open entry
@@ -5345,6 +5350,24 @@ passed through to applications running in
 .Nm .
 Attached clients should be detached and attached again after changing this
 option.
+.It Ic file\-markdown\-command Ar shell\-command
+The shell command used by
+.Ic open\-file
+to show a Markdown file (with the extension
+.Ql .md ,
+.Ql .markdown ,
+.Ql .mdown
+or
+.Ql .mkd ) ;
+.Ql %1
+is replaced by the path, quoted for the shell.
+The default uses
+.Xr glow 1
+or
+.Xr mdcat 1
+if installed, otherwise the renderer installed with etmux in
+.Pa @DATADIR@/etmux/mdview.awk .
+If empty, Markdown files open in the editor.
 .It Ic file\-open\-command Ar command
 The command run by
 .Ic open\-file .

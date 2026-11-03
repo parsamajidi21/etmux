@@ -83,7 +83,9 @@ opens at that line in VS Code by default.
   it if it is already open.
 - **FILES:** the current pane's directory. Click a file to open it next
   to your terminal: source files in your editor, binaries in a viewer
-  (`readelf` for ELF, a hex dump otherwise), directories as a shell.
+  (`readelf` for ELF, a hex dump otherwise), Markdown files rendered,
+  directories as a shell. **Right-click** a file to open it in the editor
+  instead.
 - **Show or hide it:** **`Ctrl+b b`** slides the panel in and out.
 
 ### Modern look
@@ -117,6 +119,8 @@ sudo dnf install git gcc make autoconf automake pkgconf bison \
 Optional:
 - `socat` is used by the serial tests.
 - `xxd` or `hexyl` and `readelf` are used to view binary files.
+- Markdown files are shown with `glow` or `mdcat` if installed, otherwise
+  with the small renderer that comes with etmux.
 - A [Nerd Font](https://www.nerdfonts.com/) in your terminal gives the
   icons in the example config; everything works without one.
 

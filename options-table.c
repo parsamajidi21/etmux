@@ -1063,6 +1063,19 @@ const struct options_table_entry options_table[] = {
 	  .text = "Time for which status line messages should appear."
 	},
 
+	{ .name = "file-markdown-command",
+	  .type = OPTIONS_TABLE_STRING,
+	  .scope = OPTIONS_TABLE_SESSION,
+	  .default_str = "if command -v glow >/dev/null; then glow -p %1; "
+			 "elif command -v mdcat >/dev/null; then mdcat -p %1; "
+			 "elif [ -f " ETMUX_DATADIR "/mdview.awk ]; then "
+			 "awk -f " ETMUX_DATADIR "/mdview.awk %1 | less -R; "
+			 "else less %1; fi",
+	  .text = "Shell command used by 'open-file' to show a Markdown "
+		  "file; '%1' is replaced by the path, quoted for the shell. "
+		  "If empty, Markdown files open in the editor."
+	},
+
 	{ .name = "file-open-command",
 	  .type = OPTIONS_TABLE_STRING,
 	  .scope = OPTIONS_TABLE_SESSION,

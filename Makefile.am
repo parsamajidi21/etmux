@@ -5,12 +5,14 @@ CLEANFILES = tmux.1.mdoc tmux.1.man cmd-parse.c
 # Distribution tarball options.
 EXTRA_DIST = \
 	CHANGES README COPYING example_tmux.conf embedded-modern.tmux.conf \
+	mdview.awk \
 	osdep-*.c mdoc2man.awk tmux.1
 dist_EXTRA_tmux_SOURCES = compat/*.[ch]
 
 # Preprocessor flags.
 AM_CPPFLAGS += @XOPEN_DEFINES@ \
 	-DTMUX_VERSION='"@VERSION@"' \
+	-DETMUX_DATADIR='"$(datadir)/etmux"' \
 	-DTMUX_CONF='"$(datadir)/etmux/etmux.conf:$(sysconfdir)/tmux.conf:~/.tmux.conf:$$XDG_CONFIG_HOME/tmux/tmux.conf:~/.config/tmux/tmux.conf"' \
 	-DTMUX_LOCK_CMD='"@DEFAULT_LOCK_CMD@"' \
 	-DTMUX_TERM='"@DEFAULT_TERM@"' \
@@ -299,9 +301,9 @@ fuzz_json_fuzzer_LDFLAGS = $(FUZZING_LIBS)
 fuzz_json_fuzzer_LDADD = $(LDADD) $(tmux_OBJECTS)
 endif
 
-# tmux.c has the default configuration file list compiled in from
-# AM_CPPFLAGS; rebuild it when the Makefile (and so the list) changes.
-tmux.$(OBJEXT): Makefile
+# tmux.c and options-table.c have paths compiled in from AM_CPPFLAGS;
+# rebuild them when the Makefile (and so the paths) changes.
+tmux.$(OBJEXT) options-table.$(OBJEXT): Makefile
 
 # Install tmux.1 in the right format.
 install-exec-hook:
@@ -320,8 +322,11 @@ install-exec-hook:
 	$(mkdir_p) $(DESTDIR)$(datadir)/etmux
 	$(INSTALL_DATA) $(srcdir)/embedded-modern.tmux.conf \
 		$(DESTDIR)$(datadir)/etmux/etmux.conf
+	$(INSTALL_DATA) $(srcdir)/mdview.awk \
+		$(DESTDIR)$(datadir)/etmux/mdview.awk
 
 # And uninstall it.
 uninstall-hook:
 	rm -f $(DESTDIR)$(mandir)/man1/tmux.1
 	rm -f $(DESTDIR)$(datadir)/etmux/etmux.conf
+	rm -f $(DESTDIR)$(datadir)/etmux/mdview.awk

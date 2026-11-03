@@ -13,6 +13,7 @@ LANG=C.UTF-8
 export TERM LC_ALL LANG
 
 [ -z "$TEST_TMUX" ] && TEST_TMUX=$(readlink -f ../tmux)
+HERE=$(cd "$(dirname "$0")" && pwd)
 OUT=$(mktemp -d)
 TMUX_TMPDIR="$OUT"
 export TMUX_TMPDIR
@@ -85,6 +86,29 @@ $TMUX open-file -t s:0 -i 5
 	fail "opening main.c again did not select its window"
 $TMUX open-file -t s:0 src/new.c || fail "open-file with a path failed"
 $TMUX open-file -t s:0 -i 99 2>/dev/null && fail "opened a bad index"
+
+# Markdown: shown with file-markdown-command, or the editor with -e.
+printf '# Title\n' >"$OUT/p/doc.md"
+$TMUX set -g file-markdown-command 'echo MARKDOWN %1; sleep 60'
+$TMUX set -g file-open-mode window
+$TMUX open-file -t s:0 doc.md || fail "open-file doc.md failed"
+sleep 0.3
+$TMUX list-windows -t s -F '#{pane_start_command}' | grep -q 'MARKDOWN' || \
+	fail "doc.md not shown with file-markdown-command"
+$TMUX kill-window -t s:doc
+$TMUX open-file -e -t s:0 doc.md || fail "open-file -e failed"
+sleep 0.3
+$TMUX list-windows -t s -F '#{pane_start_command}' | grep -q 'tail -f.*doc.md' || \
+	fail "doc.md not opened in the editor with -e"
+mdview="$HERE/../mdview.awk"
+[ -f "$mdview" ] || mdview="$(dirname "$TEST_TMUX")/mdview.awk"
+if [ -f "$mdview" ]; then
+	out=$(printf '# T\n- a **b**\n---\n' | awk -f "$mdview" | \
+	    sed 's/\x1b\[[0-9;]*m//g')
+	echo "$out" | grep -q '^T$' || fail "mdview: heading"
+	echo "$out" | grep -q '^  • a b$' || fail "mdview: list or bold"
+	echo "$out" | grep -q '^───' || fail "mdview: rule"
+fi
 
 # file-open-mode right (default): files open as panes in the same window,
 # stacked to the right of the terminal, which keeps the full height on the
