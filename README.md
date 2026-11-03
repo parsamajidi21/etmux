@@ -255,4 +255,5 @@ etmux is a work in progress on the `embedded-serial` branch. Not done yet:
 ## Licence
 
 Same as tmux: ISC. See [COPYING](COPYING). etmux is based on
-[tmux](https://github.com/tmux/tmux) by Nicholas Marriott and contributors.
+[tmux](https://github.com/tmux/tmux) by Nicholas Marriott and contributors;
+the original tmux README is in [README.tmux.md](README.tmux.md).
