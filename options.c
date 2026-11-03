@@ -1430,6 +1430,12 @@ options_push_changes(const char *name)
 	    strcmp(name, "pane-scrollbars-position") == 0 ||
 	    strcmp(name, "pane-scrollbars-style") == 0)
 		redraw_invalidate_all_scenes();
+	if (strcmp(name, "output-match") == 0 ||
+	    strcmp(name, "boot-detect") == 0 ||
+	    strcmp(name, "boot-stages") == 0 ||
+	    strcmp(name, "autoboot-interrupt") == 0 ||
+	    strcmp(name, "autoboot-pattern") == 0)
+		output_match_generation++;
 	if (strcmp(name, "monitor-silence") == 0)
 		alerts_reset_all();
 	if (strcmp(name, "window-style") == 0 ||

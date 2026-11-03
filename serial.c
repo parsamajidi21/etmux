@@ -682,7 +682,11 @@ serial_pane_log_open(struct window_pane *wp)
 	t = time(NULL);
 	localtime_r(&t, &tm);
 	strftime(stamp, sizeof stamp, "%Y%m%d-%H%M%S", &tm);
-	xasprintf(&path, "%s/%s-%s.log", expanded, name, stamp);
+	if (wp->boot != NULL && wp->boot->count != 0) {
+		xasprintf(&path, "%s/%s-%s-boot%u.log", expanded, name, stamp,
+		    wp->boot->count);
+	} else
+		xasprintf(&path, "%s/%s-%s.log", expanded, name, stamp);
 	free(expanded);
 
 	ser->log_fd = open(path, O_WRONLY|O_CREAT|O_APPEND|O_CLOEXEC, 0644);

@@ -1,0 +1,49 @@
+U-Boot SPL 2023.04-imx_v2023.04_6.1.55_2.2.0 (Jan 12 2024 - 10:21:44 +0000)
+DDRINFO: start DRAM init
+DDRINFO: DRAM rate 3000MTS
+DDRINFO:ddrphy calibration done
+Normal Boot
+Trying to boot from BOOTROM
+Load image from MMC/SD 0x43200
+NOTICE:  BL31: v2.8(release):lf-6.1.55-2.2.0
+NOTICE:  BL31: Built : 07:25:56, Jan 12 2024
+
+
+U-Boot 2023.04-imx_v2023.04_6.1.55_2.2.0 (Jan 12 2024 - 10:21:44 +0000)
+
+CPU:   i.MX8MP[8] rev1.1 1600 MHz (running at 1200 MHz)
+CPU:   Industrial temperature grade (-40C to 105C) at 41C
+Model: NXP i.MX8MPlus EVK board
+DRAM:  6 GiB
+MMC:   FSL_SDHC: 1, FSL_SDHC: 2
+Loading Environment from MMC... OK
+In:    serial
+Out:   serial
+Err:   serial
+Net:   eth0: ethernet@30be0000, eth1: ethernet@30bf0000 [PRIME]
+Hit any key to stop autoboot:  2 
+switch to partitions #0, OK
+mmc1 is current device
+Booting from mmc ...
+29745664 bytes read in 312 ms (90.9 MiB/s)
+## Flattened Device Tree blob at 43000000
+Starting kernel ...
+
+[    0.000000] Booting Linux on physical CPU 0x0000000000 [0x410fd034]
+[    0.000000] Linux version 6.1.55-imx (oe-user@oe-host) (aarch64-poky-linux-gcc (GCC) 12.3.0) #1 SMP PREEMPT Fri Jan 12 2024
+[    0.000000] Machine model: NXP i.MX8MPlus EVK board
+[    0.000000] efi: UEFI not found.
+[    1.402219] imx-sdma 30bd0000.dma-controller: firmware found.
+[    2.814330] EXT4-fs (mmcblk1p2): mounted filesystem with ordered data mode.
+[    2.823107] Run /sbin/init as init process
+[    3.104512] systemd[1]: systemd 251.8 running in system mode
+[    3.190274] systemd[1]: Detected architecture arm64.
+
+Welcome to NXP i.MX Release Distro 6.1-mickledore (mickledore)!
+
+[  OK  ] Started Journal Service.
+[  OK  ] Reached target Multi-User System.
+
+NXP i.MX Release Distro 6.1-mickledore imx8mpevk ttymxc1
+
+imx8mpevk login: 

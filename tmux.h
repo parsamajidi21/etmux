@@ -1338,6 +1338,33 @@ struct window_pane_serial {
 	char			*log_path;
 };
 
+/* Boot detection state (see output-match.c). */
+#define OUTPUT_MATCH_LINE_MAX 1024
+#define BOOT_HISTORY 10
+#define BOOT_STAGES_MAX 16
+struct boot_record {
+	u_int			 number;
+	struct timeval		 start;
+	u_int			 nstages;
+	struct {
+		char		*name;
+		struct timeval	 at;
+	} stages[BOOT_STAGES_MAX];
+};
+struct window_pane_boot {
+	int			 stage;		/* index, -1 for none */
+	char			*stage_name;
+	u_int			 count;
+	struct timeval		 start;
+	struct timeval		 end;		/* reached the last stage */
+	int			 autoboot_sent;
+
+	struct boot_record	 history[BOOT_HISTORY];
+	u_int			 current;
+	u_int			 nhistory;
+};
+struct window_pane_match;
+
 struct window_pane {
 	u_int		 id;
 	int		 references;
@@ -1440,6 +1467,9 @@ struct window_pane {
 	struct window_pane_offset pipe_offset;
 
 	struct window_pane_serial *serial;
+	struct window_pane_match *match;	/* NULL if nothing to match */
+	u_int		 match_generation;
+	struct window_pane_boot *boot;
 
 	struct screen	*screen;
 	struct screen	 base;
@@ -4309,6 +4339,15 @@ int		 serial_pane_apply(struct window_pane *, char **);
 void		 serial_pane_log_open(struct window_pane *);
 void		 serial_pane_input(struct window_pane *, const u_char *, size_t);
 void		 serial_pane_free(struct window_pane_serial *);
+
+/* output-match.c */
+extern u_int	 output_match_generation;
+void		 output_match_free(struct window_pane *);
+void		 output_match_refresh(struct window_pane *);
+void		 output_match_feed(struct window_pane *, const u_char *, size_t);
+void		 output_match_free_boot(struct window_pane *);
+int		 output_match_boot_elapsed(struct window_pane *,
+		     struct timeval *);
 
 /* spawn.c */
 struct winlink	*spawn_window(struct spawn_context *, char **);

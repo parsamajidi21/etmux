@@ -248,6 +248,18 @@ static const char *options_table_copy_mode_line_numbers_list[] = {
 		"#[pop-default]" \
 		"#[norange list=on default] " \
 	"}"
+static const char *options_table_boot_detect_list[] = {
+	"off", "on", "serial", NULL
+};
+static const char *options_table_boot_stages_default[] = {
+	"!spl:U-Boot SPL [0-9]",
+	"!u-boot:^U-Boot [0-9]{4}\\.[0-9]{2}",
+	"kernel:Booting Linux on physical CPU|(^|\\] )Linux version [0-9]",
+	"init:Run /[^ ]* as init process|init first stage started|"
+	    "Welcome to .*!",
+	"login:login: *$|^console:/ [$#] *$",
+	NULL
+};
 static const char *options_table_status_format_default[] = {
 	OPTIONS_TABLE_STATUS_FORMAT1,
 	OPTIONS_TABLE_STATUS_FORMAT2,
@@ -1552,6 +1564,42 @@ const struct options_table_entry options_table[] = {
 	  .text = "Format used to automatically rename windows."
 	},
 
+	{ .name = "autoboot-interrupt",
+	  .type = OPTIONS_TABLE_STRING,
+	  .scope = OPTIONS_TABLE_WINDOW|OPTIONS_TABLE_PANE,
+	  .default_str = "",
+	  .text = "Keys to send to a pane with boot detection on when the "
+		  "'autoboot-pattern' prompt appears, once per boot. Empty "
+		  "turns this off."
+	},
+
+	{ .name = "autoboot-pattern",
+	  .type = OPTIONS_TABLE_STRING,
+	  .scope = OPTIONS_TABLE_WINDOW|OPTIONS_TABLE_PANE,
+	  .default_str = "(Hit|Press) .* to (stop|abort) autoboot",
+	  .text = "Regular expression for the bootloader's autoboot prompt."
+	},
+
+	{ .name = "boot-detect",
+	  .type = OPTIONS_TABLE_CHOICE,
+	  .scope = OPTIONS_TABLE_WINDOW|OPTIONS_TABLE_PANE,
+	  .choices = options_table_boot_detect_list,
+	  .default_num = 2,
+	  .text = "Whether to follow boot stages ('boot-stages') in pane "
+		  "output: off, on, or only in serial panes."
+	},
+
+	{ .name = "boot-stages",
+	  .type = OPTIONS_TABLE_STRING,
+	  .scope = OPTIONS_TABLE_WINDOW|OPTIONS_TABLE_PANE,
+	  .flags = OPTIONS_TABLE_IS_ARRAY,
+	  .default_arr = options_table_boot_stages_default,
+	  .separator = "",
+	  .text = "Boot stages in order, each as 'name:regex'. Seeing an "
+		  "earlier stage starts a new boot, as does seeing a stage "
+		  "again if its name starts with '!'."
+	},
+
 	{ .name = "clock-mode-colour",
 	  .type = OPTIONS_TABLE_STRING,
 	  .scope = OPTIONS_TABLE_WINDOW,
@@ -1771,6 +1819,16 @@ const struct options_table_entry options_table[] = {
 	  .text = "Time after which an alert is triggered by silence. "
 		  "Zero means no alert."
 
+	},
+
+	{ .name = "output-match",
+	  .type = OPTIONS_TABLE_STRING,
+	  .scope = OPTIONS_TABLE_WINDOW|OPTIONS_TABLE_PANE,
+	  .flags = OPTIONS_TABLE_IS_ARRAY,
+	  .default_str = "",
+	  .separator = "",
+	  .text = "Patterns matched against each line of pane output, each as "
+		  "'name:regex'. A match runs the 'pane-output-match' hook."
 	},
 
 	{ .name = "other-pane-height",
@@ -2241,6 +2299,8 @@ const struct options_table_entry options_table[] = {
 	    "Run when an OSC 133 command starts in a pane."),
 	OPTIONS_TABLE_PANE_HOOK("pane-created", "",
 	    "Run when a pane is created or respawned."),
+	OPTIONS_TABLE_PANE_HOOK("pane-boot-stage", "",
+	    "Run when a pane reaches a new boot stage."),
 	OPTIONS_TABLE_PANE_HOOK("pane-died", "",
 	    "Run when the program running in a pane exits, but remain-on-exit "
 	    "is on so the pane has not closed."),
@@ -2260,6 +2320,9 @@ const struct options_table_entry options_table[] = {
 	    "Run when a pane exits a mode."),
 	OPTIONS_TABLE_PANE_HOOK("pane-moved", "",
 	    "Run when a pane is moved to another window."),
+	OPTIONS_TABLE_PANE_HOOK("pane-output-match", "",
+	    "Run when a line of pane output matches an 'output-match' "
+	    "pattern."),
 	OPTIONS_TABLE_PANE_HOOK("pane-prompt-closed", "",
 	    "Run when a prompt in a pane is closed."),
 	OPTIONS_TABLE_PANE_HOOK("pane-prompt-opened", "",

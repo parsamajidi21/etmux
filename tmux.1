@@ -4425,6 +4425,15 @@ tries to open it again every half second.
 .Pp
 Serial pane commands are:
 .Bl -tag -width Ds
+.It Xo Ic boot\-report
+.Op Fl N Ar count
+.Op Fl t Ar target\-pane
+.Xc
+Show how long each stage took in the last
+.Ar count
+(default 5) boots seen in a pane (see
+.Ic boot\-stages ) ,
+oldest first.
 .It Xo Ic choose\-serial
 .Op Fl B
 .Op Fl b Ar baud\-rate
@@ -6115,6 +6124,39 @@ used when the
 .Ic automatic\-rename
 option is enabled.
 .Pp
+.It Ic autoboot\-interrupt Ar keys
+Text to send to a pane with boot detection on (see
+.Ic boot\-detect )
+the first time in each boot that a line matches
+.Ic autoboot\-pattern ,
+for example
+.Ql " "
+to stop U-Boot's autoboot countdown.
+If empty (the default), nothing is sent.
+.It Ic autoboot\-pattern Ar regex
+Regular expression for the bootloader's autoboot prompt.
+The prompt is also matched before the end of its line, since U-Boot does not
+print a newline while counting down.
+.It Xo Ic boot\-detect
+.Op Cm off | on | serial
+.Xc
+Whether to follow the stages in
+.Ic boot\-stages
+in pane output: never, in every pane, or only in serial panes (the
+default).
+.It Ic boot\-stages[] Ar name:regex
+The boot stages, in order, each a name and an extended regular expression
+matched against lines of output.
+Seeing a stage earlier than the current one starts a new boot, as does
+seeing the same stage again if its name starts with
+.Ql \&! .
+When a new boot starts, the
+.Ql pane_boot_*
+formats are reset and a serial pane starts a new log file (see
+.Ic serial\-log\-dir ) .
+The defaults recognise U-Boot SPL and U-Boot banners, the Linux kernel, the
+init process (sysvinit, systemd or Android) and a login or Android console
+prompt.
 .It Ic clock\-mode\-colour Ar colour
 Set clock colour.
 .Pp
@@ -6316,6 +6358,24 @@ Windows that have been silent for the interval are highlighted in the
 status line.
 An interval of zero disables the monitoring.
 .Pp
+.It Ic output\-match[] Ar name:regex
+Patterns matched against each line of output in the pane, each a name and an
+extended regular expression.
+Escape sequences and carriage returns are removed before matching.
+A match runs the
+.Ic pane\-output\-match
+hook with the
+.Ql hook_match_name
+and
+.Ql hook_match_line
+formats set, at most ten times a second for each pane.
+For example:
+.Bd -literal -offset indent
+set \-g output\-match[0] \(aqpanic:Kernel panic\(aq
+set \-ga output\-match \(aqoops:Internal error: Oops\(aq
+set\-hook \-g pane\-output\-match \e
+    \(aqdisplay \-d0 "#{hook_match_name}: #{hook_match_line}"\(aq
+.Ed
 .It Ic other\-pane\-height Ar height
 Set the height of the other panes (not the main pane) in the
 .Cm main\-horizontal
@@ -6888,6 +6948,15 @@ Run when an OSC 133 command finishes in a pane.
 Run when an OSC 133 command starts in a pane.
 .It pane\-created
 Run when a pane is created or respawned.
+.It pane\-boot\-stage
+Run when a pane reaches a new boot stage (see
+.Ic boot\-stages ) .
+The stage and boot number are available as
+.Ql hook_boot_stage
+and
+.Ql hook_boot_count
+and the line as
+.Ql hook_match_line .
 .It pane\-died
 Run when the program running in a pane exits, but
 .Ic remain\-on\-exit
@@ -6910,6 +6979,10 @@ Run when a pane enters a mode.
 Run when a pane exits a mode.
 .It pane\-moved
 Run when a pane is moved to another window.
+.It pane\-output\-match
+Run when a line of output matches an
+.Ic output\-match
+pattern.
 .It pane\-prompt\-closed
 Run when a prompt in a pane is closed.
 .It pane\-prompt\-opened
@@ -7805,6 +7878,9 @@ The following variables are available, where appropriate:
 .It Li "pane_at_right" Ta "" Ta "1 if pane is at the right of window"
 .It Li "pane_at_top" Ta "" Ta "1 if pane is at the top of window"
 .It Li "pane_bg" Ta "" Ta "Pane background colour"
+.It Li "pane_boot_count" Ta "" Ta "Number of boots seen in pane"
+.It Li "pane_boot_elapsed" Ta "" Ta "Seconds since boot started, or length of boot once at the last stage"
+.It Li "pane_boot_stage" Ta "" Ta "Current boot stage name"
 .It Li "pane_bottom" Ta "" Ta "Bottom of pane"
 .It Li "pane_command_duration" Ta "" Ta "Current or most recent OSC 133 command duration in seconds"
 .It Li "pane_command_end_time" Ta "" Ta "Time most recent OSC 133 command ended"

@@ -2311,6 +2311,38 @@ format_cb_pane_serial_state(struct format_tree *ft)
 	return (xstrdup(serial_pane_state(ft->wp->serial)));
 }
 
+/* Callback for pane_boot_count. */
+static void *
+format_cb_pane_boot_count(struct format_tree *ft)
+{
+	if (ft->wp == NULL)
+		return (NULL);
+	if (ft->wp->boot == NULL)
+		return (xstrdup("0"));
+	return (format_printf("%u", ft->wp->boot->count));
+}
+
+/* Callback for pane_boot_elapsed. */
+static void *
+format_cb_pane_boot_elapsed(struct format_tree *ft)
+{
+	struct timeval	tv;
+
+	if (ft->wp == NULL || output_match_boot_elapsed(ft->wp, &tv) != 0)
+		return (NULL);
+	return (format_printf("%ld", (long)tv.tv_sec));
+}
+
+/* Callback for pane_boot_stage. */
+static void *
+format_cb_pane_boot_stage(struct format_tree *ft)
+{
+	if (ft->wp == NULL || ft->wp->boot == NULL ||
+	    ft->wp->boot->stage_name == NULL)
+		return (NULL);
+	return (xstrdup(ft->wp->boot->stage_name));
+}
+
 /* Callback for pane_dead. */
 static void *
 format_cb_pane_dead(struct format_tree *ft)
@@ -3948,6 +3980,15 @@ static const struct format_table_entry format_table[] = {
 	},
 	{ "pane_bg", FORMAT_TABLE_STRING,
 	  format_cb_pane_bg
+	},
+	{ "pane_boot_count", FORMAT_TABLE_STRING,
+	  format_cb_pane_boot_count
+	},
+	{ "pane_boot_elapsed", FORMAT_TABLE_STRING,
+	  format_cb_pane_boot_elapsed
+	},
+	{ "pane_boot_stage", FORMAT_TABLE_STRING,
+	  format_cb_pane_boot_stage
 	},
 	{ "pane_bottom", FORMAT_TABLE_STRING,
 	  format_cb_pane_bottom

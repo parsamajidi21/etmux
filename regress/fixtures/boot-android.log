@@ -1,0 +1,13 @@
+U-Boot SPL 2022.04-android (Jun 01 2024 - 08:00:00 +0000)
+Trying to boot from BOOTROM
+
+U-Boot 2022.04-android (Jun 01 2024 - 08:00:00 +0000)
+Model: NXP i.MX8MQ EVK
+Hit any key to stop autoboot:  0 
+Starting kernel ...
+[    0.000000] Booting Linux on physical CPU 0x0000000000 [0x410fd034]
+[    3.512000] init: init first stage started!
+[    5.104000] init: init second stage started!
+[   12.004000] avc: denied { read } for comm="vendor.foo" name="bar" scontext=u:r:vendor_foo:s0 tcontext=u:object_r:sysfs:s0 tclass=file permissive=0
+[   18.300000] init: Service 'vendor.camera-provider' (pid 412) crashed 4 times in 4 minutes
+console:/ $ 

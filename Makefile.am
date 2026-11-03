@@ -95,6 +95,7 @@ dist_tmux_SOURCES = \
 	client.c \
 	cmd-attach-session.c \
 	cmd-bind-key.c \
+	cmd-boot-report.c \
 	cmd-break-pane.c \
 	cmd-capture-pane.c \
 	cmd-choose-serial.c \
@@ -194,6 +195,7 @@ dist_tmux_SOURCES = \
 	names.c \
 	options-table.c \
 	options.c \
+	output-match.c \
 	paste.c \
 	proc.c \
 	prompt-history.c \

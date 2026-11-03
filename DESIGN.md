@@ -104,3 +104,85 @@ paths work on all platforms.
   with `<termios.h>`. Worth a small `osdep` helper?
 - libudev monitoring would make reconnects instant. Polling every 500 ms is
   cheap and has no dependency, so it is the only implementation for now.
+
+## A2. Output triggers and boot detection
+
+**Options:**
+- `output-match[]` (window/pane, array of `name:regex`).
+- `boot-detect` (`off`, `on` or `serial`; the default is `serial`, so it only
+  affects serial panes, which are themselves opt-in).
+- `boot-stages[]` (array of `name:regex`; a leading `!` marks a stage
+  that starts a new boot if seen again).
+- `autoboot-interrupt` (keys to send; empty means off) and
+  `autoboot-pattern`.
+
+**Hooks:**
+- `pane-output-match`, with `hook_match_name` and `hook_match_line`.
+- `pane-boot-stage`, with `hook_boot_stage`, `hook_boot_count` and
+  `hook_match_line`.
+
+**Formats:** `pane_boot_stage`, `pane_boot_elapsed`, `pane_boot_count`.
+
+**Command:** `boot-report [-N count]`.
+
+**Data structures** (`output-match.c`):
+- `struct window_pane_match` (opaque, `wp->match`) holds the compiled
+  patterns and stages, the autoboot regex, a 1 KiB line buffer, the
+  escape-stripping state and the rate-limit counters.
+- `struct window_pane_boot` (`wp->boot`, allocated on the first stage)
+  holds the current stage, the boot count, start and end times, the
+  "autoboot already sent" flag and a ring of the last 10 `boot_record`s
+  (up to 16 stage timestamps each).
+
+**Cost when unused:** a global `output_match_generation` (starting at 1) is
+bumped by `options_push_changes()` whenever one of the options above
+changes. Each pane remembers the generation it compiled for (starting at 0),
+so its first read and the first read after a change rebuild the state. If
+there is nothing to match, `wp->match` stays NULL. Per read, a pane with no
+patterns pays one integer compare and one pointer test. Matching works on
+the bytes `input_parse_pane()` is about to parse, so it sees exactly what
+the screen sees and needs no extra copy or buffering of the data.
+
+**Matching:**
+- Escape sequences are stripped: CSI up to its final byte, and OSC, DCS,
+  PM, APC and SOS up to BEL or ST.
+- `\r` and NUL are dropped, and `\b` deletes, so a U-Boot countdown is
+  matched as it looks on screen. Lines longer than 1 KiB are truncated.
+- Each complete line is tried against the stages (first match wins), the
+  autoboot pattern and every `output-match` pattern, using POSIX extended
+  regular expressions.
+- The incomplete line is also tried against the autoboot pattern after
+  each read, because U-Boot counts down without a newline.
+
+**Boot state machine:** stages are indexed in option order.
+- With no stage seen yet, any stage starts boot 1.
+- A stage with a lower index than the current one starts a new boot (for
+  example the kernel after login: a reset that printed no bootloader
+  output).
+- The same stage again starts a new boot only if it is marked `!`. The
+  defaults mark `spl` and `u-boot`, because a kernel log has both "Booting
+  Linux" and "Linux version" and an init has several matching lines.
+- A higher index just advances.
+
+A new boot resets the elapsed timer and the autoboot flag, adds a history
+record and rotates the serial log. Log names gain `-bootN`, so two boots
+in one second do not share a file. Reaching the last stage freezes
+`pane_boot_elapsed` at the boot's length.
+
+**Failure modes:**
+
+| Case | Behaviour |
+| --- | --- |
+| Bad regex or entry without `name:` | Skipped and logged; the other entries still work. |
+| Flood of matching lines (a stream of `avc: denied`) | At most 10 `pane-output-match` hooks per pane per second; the rest are counted and logged, so a chatty kernel cannot bury tmux in hook commands. |
+| Escape sequence split across reads | The stripping state lives in the pane, so it carries over. |
+| Very long lines | Truncated at 1 KiB for matching; the screen is unaffected. |
+| Autoboot keys when the device is disconnected | Not sent. The flag is per boot, so the next boot tries again. |
+
+**Tests:**
+- `regress/output-match-boot.sh` covers triggers on a normal pane
+  (coloured output, the rate limit) and, through a socat pty pair,
+  replays `regress/fixtures/boot-imx8-linux.log` (twice) and
+  `boot-android.log`. It checks stages, counts, the autoboot key, the
+  earlier-stage reset, `boot-report` and per-boot logs.
+- `regress/replay-boot.sh` replays a log at a set line rate.

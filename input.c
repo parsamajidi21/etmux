@@ -1039,6 +1039,10 @@ input_parse_pane(struct window_pane *wp)
 	new_data = window_pane_get_new_data(wp, &wp->offset, &new_size);
 	if (new_size != 0)
 		wp->last_output_time = time(NULL);
+	if (wp->match_generation != output_match_generation)
+		output_match_refresh(wp);
+	if (wp->match != NULL && new_size != 0)
+		output_match_feed(wp, new_data, new_size);
 	if (wp->serial != NULL)
 		serial_pane_input(wp, new_data, new_size);
 	else

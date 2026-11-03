@@ -1645,6 +1645,8 @@ window_pane_destroy(struct window_pane *wp)
 
 	serial_pane_free(wp->serial);
 	wp->serial = NULL;
+	output_match_free(wp);
+	output_match_free_boot(wp);
 
 	if (wp->event != NULL) {
 		bufferevent_free(wp->event);
