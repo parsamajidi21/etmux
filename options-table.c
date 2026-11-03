@@ -1131,7 +1131,7 @@ const struct options_table_entry options_table[] = {
 	  .type = OPTIONS_TABLE_CHOICE,
 	  .scope = OPTIONS_TABLE_SESSION,
 	  .choices = options_table_side_status_list,
-	  .default_num = 2,
+	  .default_num = 0,
 	  .text = "Whether to draw a vertical status line at the left or "
 		  "right of the terminal."
 	},
@@ -1164,7 +1164,7 @@ const struct options_table_entry options_table[] = {
 	{ .name = "side-status-style",
 	  .type = OPTIONS_TABLE_STRING,
 	  .scope = OPTIONS_TABLE_SESSION,
-	  .default_str = "bg=#000080,fg=white",
+	  .default_str = "fg=themegreen",
 	  .flags = OPTIONS_TABLE_IS_STYLE,
 	  .separator = ",",
 	  .text = "Style of the side status line."
@@ -1191,7 +1191,7 @@ const struct options_table_entry options_table[] = {
 	  .type = OPTIONS_TABLE_CHOICE,
 	  .scope = OPTIONS_TABLE_SESSION,
 	  .choices = options_table_status_list,
-	  .default_num = 0,
+	  .default_num = 1,
 	  .text = "Number of lines in the status line."
 	},
 
@@ -1313,7 +1313,7 @@ const struct options_table_entry options_table[] = {
 	{ .name = "status-style",
 	  .type = OPTIONS_TABLE_STRING,
 	  .scope = OPTIONS_TABLE_SESSION,
-	  .default_str = "bg=#000080,fg=white",
+	  .default_str = "bg=themegreen,fg=themeblack",
 	  .flags = OPTIONS_TABLE_IS_STYLE,
 	  .separator = ",",
 	  .text = "Style of the status line."
