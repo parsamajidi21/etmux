@@ -186,3 +186,60 @@ in one second do not share a file. Reaching the last stage freezes
   `boot-android.log`. It checks stages, counts, the autoboot key, the
   earlier-stage reset, `boot-report` and per-boot logs.
 - `regress/replay-boot.sh` replays a log at a set line rate.
+
+## A3. file:line to editor from copy mode
+
+**Command:** the `open-location` copy-mode command.
+
+**Options** (window/pane):
+- `open-location-command` (default `code -g FILE:LINE[:COL]`)
+- `open-location-remote-command` (default
+  `code --remote ssh-remote+HOST -g ...`)
+- `open-location-rewrite[]` (`regex=>replacement` rules)
+
+The commands get the formats `location_file`, `location_line`,
+`location_column` and `location_remote_host`.
+
+**Flow** (`window-copy.c` `window_copy_cmd_open_location`, `location.c`):
+1. Take the line under the cursor, or the first line of the selection.
+2. `location_find()` tries patterns from most to least specific and keeps
+   the match covering the cursor, else the first. The patterns are:
+   - Python's `File "x", line N`
+   - `path:line[:col]` and dtc's `path:line.col`
+   - ld's `file:(.text...)`
+   - a bare absolute path, which gets line 1
+3. A candidate file must look like a path: a `/`, or an extension that is
+   not all digits, or a known name (`Makefile`, `Kconfig`, `Kbuild`,
+   `Dockerfile`, `Android.bp`). This rules out timestamps such as
+   `12:30:01` and version strings.
+4. Apply the rewrite rules (`regsub`, POSIX ERE, `\1` back references),
+   then expand `~/`.
+5. Work out the remote host: the `@remote-host` user option (from pane up
+   to global), else on Linux the host argument of a foreground `ssh`. That
+   comes from `/proc/<tcgetpgrp>/cmdline`, skipping options that take a
+   value.
+6. A local relative path is joined to the pane's cwd (`osdep_get_cwd`). A
+   remote one is left alone, since the remote side resolves it.
+7. Expand the command template and run it with `job_run(JOB_NOWAIT)`. A
+   status message reports what was opened.
+
+**Security:** paths come from untrusted output: a board on a serial
+line, or a remote shell. The default commands quote the file with
+`#{q:location_file}`, and the line and column are digits only. A user's
+own template should keep `q:`.
+
+**Failure modes:**
+
+| Case | Behaviour |
+| --- | --- |
+| No location on the line | Status message "No file location found". |
+| Editor not installed | The job fails silently (as with `run-shell -b`). The command is logged at debug level. |
+| Serial pane | It has no cwd, so a relative path is passed through as is. |
+| Wide characters before the cursor | Cursor-to-byte mapping treats each byte as a column. It is exact for ASCII build output and approximate otherwise. |
+
+**Tests:** `regress/open-location.sh` reads table rows from
+`regress/fixtures/locations.txt` (gcc, clang, include chains, ld, dtc
+errors and warnings, kernel WARNING, ninja, soong, bitbake ParseError and
+Logfile, Python, make, and two lines with no location). It also checks
+cursor choice between two locations, the rewrite rules, `@remote-host`,
+and ssh host detection using a process with argv[0] `ssh`.

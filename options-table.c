@@ -1821,6 +1821,36 @@ const struct options_table_entry options_table[] = {
 
 	},
 
+	{ .name = "open-location-command",
+	  .type = OPTIONS_TABLE_STRING,
+	  .scope = OPTIONS_TABLE_WINDOW|OPTIONS_TABLE_PANE,
+	  .default_str = "code -g #{q:location_file}:#{location_line}"
+			 "#{?location_column,:#{location_column},}",
+	  .text = "Shell command run by the 'open-location' copy mode command "
+		  "to open a file at a line."
+	},
+
+	{ .name = "open-location-remote-command",
+	  .type = OPTIONS_TABLE_STRING,
+	  .scope = OPTIONS_TABLE_WINDOW|OPTIONS_TABLE_PANE,
+	  .default_str = "code --remote "
+			 "ssh-remote+#{q:location_remote_host} "
+			 "-g #{q:location_file}:#{location_line}"
+			 "#{?location_column,:#{location_column},}",
+	  .text = "Shell command run by 'open-location' when the pane is on "
+		  "a remote host ('@remote-host' or a running ssh)."
+	},
+
+	{ .name = "open-location-rewrite",
+	  .type = OPTIONS_TABLE_STRING,
+	  .scope = OPTIONS_TABLE_WINDOW|OPTIONS_TABLE_PANE,
+	  .flags = OPTIONS_TABLE_IS_ARRAY,
+	  .default_str = "",
+	  .separator = "",
+	  .text = "Rules applied in order to paths found by 'open-location', "
+		  "each as 'regex=>replacement'."
+	},
+
 	{ .name = "output-match",
 	  .type = OPTIONS_TABLE_STRING,
 	  .scope = OPTIONS_TABLE_WINDOW|OPTIONS_TABLE_PANE,

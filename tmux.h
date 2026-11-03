@@ -4340,6 +4340,17 @@ void		 serial_pane_log_open(struct window_pane *);
 void		 serial_pane_input(struct window_pane *, const u_char *, size_t);
 void		 serial_pane_free(struct window_pane_serial *);
 
+/* location.c */
+struct location {
+	char	*file;
+	u_int	 line;
+	u_int	 column;	/* 0 if not known */
+};
+int		 location_find(const char *, u_int, struct location *);
+void		 location_free(struct location *);
+char		*location_rewrite(const char *, struct options *);
+char		*location_ssh_host(struct window_pane *);
+
 /* output-match.c */
 extern u_int	 output_match_generation;
 void		 output_match_free(struct window_pane *);

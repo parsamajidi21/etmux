@@ -2256,6 +2256,30 @@ but treat all non-whitespace characters as part of a word.
 .Xc
 Switch at which end of the selection the cursor sits.
 .It Xo
+.Ic open\-location
+.Xc
+Find a file location (a path and line, and a column if present) on the
+line under the cursor, or on the first line of the selection, and open it
+with
+.Ic open\-location\-command .
+If there are several on the line, the one under the cursor is used.
+Compiler and linker messages
+.Pq Ql file:line:column ,
+.Xr dtc 1
+.Pq Ql file:line.column ,
+kernel warnings, ninja and soong errors, bitbake errors and Python
+tracebacks are recognised; an absolute path with no line opens at line 1.
+The path is changed by the
+.Ic open\-location\-rewrite
+rules, and a relative path is taken as relative to the pane's working
+directory.
+If the
+.Ql @remote\-host
+user option is set, or the pane is running
+.Xr ssh 1 ,
+.Ic open\-location\-remote\-command
+is used instead.
+.It Xo
 .Ic open\-output
 .Op Fl a
 .Op Ar command
@@ -6358,6 +6382,35 @@ Windows that have been silent for the interval are highlighted in the
 status line.
 An interval of zero disables the monitoring.
 .Pp
+.It Ic open\-location\-command Ar command
+Shell command run by the
+.Ic open\-location
+copy mode command.
+The formats
+.Ql location_file ,
+.Ql location_line
+and
+.Ql location_column
+(empty if not known) are available; use the
+.Ql q:
+modifier for the file, since it comes from pane output.
+The default runs
+.Ql code \-g .
+.It Ic open\-location\-remote\-command Ar command
+As
+.Ic open\-location\-command
+but used when the pane is on a remote host; the host is available as
+.Ql location_remote_host .
+The default runs
+.Ql code \-\-remote ssh\-remote+ Ns Ar host .
+.It Ic open\-location\-rewrite[] Ar regex=>replacement
+Rules applied in order to the paths found by
+.Ic open\-location ,
+for example to map a container or Yocto build directory to the local
+checkout:
+.Bd -literal -offset indent
+set \-g open\-location\-rewrite[0] \(aq^/workdir/=>/home/me/yocto/\(aq
+.Ed
 .It Ic output\-match[] Ar name:regex
 Patterns matched against each line of output in the pane, each a name and an
 extended regular expression.

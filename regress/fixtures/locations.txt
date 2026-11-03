@@ -1,0 +1,15 @@
+gcc	../src/drivers/uart.c:142:17: error: 'baud' undeclared (first use in this function)	../src/drivers/uart.c|142|17
+clang	src/main.cpp:7:3: warning: unused variable 'x' [-Wunused-variable]	src/main.cpp|7|3
+include	In file included from include/linux/kernel.h:12,	include/linux/kernel.h|12|
+ld	/usr/bin/ld: board.o:(.text+0x24): undefined reference to `uart_init'	board.o|1|
+dtc	Error: arch/arm64/boot/dts/freescale/imx8mp-evk.dts:211.1-7 syntax error	arch/arm64/boot/dts/freescale/imx8mp-evk.dts|211|1
+dtcwarn	Warning (unit_address_vs_reg): /tmp/x/board.dtsi:33.12-40.5: node has a unit name	/tmp/x/board.dtsi|33|12
+kernel	[    1.234567] WARNING: CPU: 0 PID: 1 at drivers/gpu/drm/drm_atomic.c:420 drm_atomic_check+0x1c/0x40	drivers/gpu/drm/drm_atomic.c|420|
+ninja	FAILED: obj/foo.o ../../src/foo.c:9:1: error: expected ';'	../../src/foo.c|9|1
+soong	error: hardware/interfaces/camera/Android.bp:23:5: module "foo": unrecognized property	hardware/interfaces/camera/Android.bp|23|5
+bitbake	ERROR: ParseError at /home/me/poky/meta-board/recipes-bsp/u-boot/u-boot-imx_%.bbappend:12: unparsed line	/home/me/poky/meta-board/recipes-bsp/u-boot/u-boot-imx_%.bbappend|12|
+bblog	ERROR: Logfile of failure stored in: /work/build/tmp/work/armv8a/foo/1.0/temp/log.do_compile.4242	/work/build/tmp/work/armv8a/foo/1.0/temp/log.do_compile.4242|1|
+python	  File "/usr/lib/python3/dist-packages/bb/cooker.py", line 1034, in buildTargets	/usr/lib/python3/dist-packages/bb/cooker.py|1034|
+make	Makefile:48: *** missing separator.  Stop.	Makefile|48|
+none	[   12.004000] init: Service 'vendor.camera' (pid 412) crashed 4 times	
+version	gcc version 12.3.0 (GCC) at 12:30:01	

@@ -188,6 +188,7 @@ dist_tmux_SOURCES = \
 	layout-custom.c \
 	layout-set.c \
 	layout.c \
+	location.c \
 	log.c \
 	menu.c \
 	mode-tree.c \

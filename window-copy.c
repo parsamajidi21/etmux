@@ -3004,6 +3004,104 @@ window_copy_cmd_open_output(struct window_copy_cmd_state *cs)
 }
 
 static enum window_copy_cmd_action
+window_copy_cmd_open_location(struct window_copy_cmd_state *cs)
+{
+	struct window_mode_entry	*wme = cs->wme;
+	struct window_pane		*wp = wme->wp;
+	struct window_copy_mode_data	*data = wme->data;
+	struct location			 loc;
+	struct format_tree		*ft;
+	const char			*template, *home;
+	char				*text, *cp, *path, *new, *host, *cwd;
+	char				*cmd;
+	void				*buf;
+	size_t				 len;
+	u_int				 cx;
+
+	/* The first line of the selection, or the line under the cursor. */
+	if (data->screen.sel != NULL || data->lineflag != LINE_SEL_NONE) {
+		buf = window_copy_get_selection(wme, &len);
+		if (buf == NULL)
+			return (WINDOW_COPY_CMD_NOTHING);
+		text = xstrndup(buf, len);
+		free(buf);
+		cx = 0;
+	} else {
+		text = window_copy_get_line(wp, data->cy);
+		cx = data->cx;
+	}
+	if ((cp = strchr(text, '\n')) != NULL)
+		*cp = '\0';
+	if (location_find(text, cx, &loc) != 0) {
+		if (cs->c != NULL) {
+			status_message_set(cs->c, -1, 1, 0, 0,
+			    "No file location found");
+		}
+		free(text);
+		return (WINDOW_COPY_CMD_NOTHING);
+	}
+	free(text);
+
+	path = location_rewrite(loc.file, wp->options);
+	location_free(&loc);
+	if (path[0] == '~' && path[1] == '/' && (home = find_home()) != NULL) {
+		xasprintf(&new, "%s%s", home, path + 1);
+		free(path);
+		path = new;
+	}
+
+	/* @remote-host if set, otherwise the host of a running ssh. */
+	host = format_single(NULL, "#{@remote-host}", cs->c, cs->s, cs->wl,
+	    wp);
+	if (*host == '\0') {
+		free(host);
+		host = location_ssh_host(wp);
+	}
+
+	/* Relative paths are relative to the pane's directory, if local. */
+	if (*path != '/' && host == NULL && wp->fd != -1 &&
+	    wp->serial == NULL && (cwd = osdep_get_cwd(wp->fd)) != NULL) {
+		xasprintf(&new, "%s/%s", cwd, path);
+		free(path);
+		path = new;
+	}
+
+	ft = format_create(cs->c, NULL, FORMAT_PANE|wp->id, 0);
+	format_defaults(ft, cs->c, cs->s, cs->wl, wp);
+	format_add(ft, "location_file", "%s", path);
+	format_add(ft, "location_line", "%u", loc.line);
+	if (loc.column != 0)
+		format_add(ft, "location_column", "%u", loc.column);
+	else
+		format_add(ft, "location_column", "%s", "");
+	format_add(ft, "location_remote_host", "%s", host != NULL ? host : "");
+	if (host != NULL)
+		template = "open-location-remote-command";
+	else
+		template = "open-location-command";
+	cmd = format_expand(ft, options_get_string(wp->options, template));
+	format_free(ft);
+
+	log_debug("%s: %s", __func__, cmd);
+	if (job_run(cmd, 0, NULL, NULL, cs->s,
+	    server_client_get_cwd(cs->c, cs->s), NULL, NULL, NULL, NULL,
+	    JOB_NOWAIT, -1, -1) == NULL) {
+		if (cs->c != NULL) {
+			status_message_set(cs->c, -1, 1, 0, 0,
+			    "Failed to run: %s", cmd);
+		}
+	} else if (cs->c != NULL) {
+		status_message_set(cs->c, -1, 1, 0, 0, "Opening %s:%u%s%s",
+		    path, loc.line, host != NULL ? " on " : "",
+		    host != NULL ? host : "");
+	}
+	free(cmd);
+	free(host);
+	free(path);
+	return (WINDOW_COPY_CMD_NOTHING);
+}
+
+static enum window_copy_cmd_action
 window_copy_cmd_goto_line(struct window_copy_cmd_state *cs)
 {
 	struct window_mode_entry	*wme = cs->wme;
@@ -3890,6 +3988,12 @@ static const struct {
 	  .flags = 0,
 	  .clear = WINDOW_COPY_CMD_CLEAR_EMACS_ONLY,
 	  .f = window_copy_cmd_other_end
+	},
+	{ .command = "open-location",
+	  .args = { "", 0, 0, NULL },
+	  .flags = 0,
+	  .clear = WINDOW_COPY_CMD_CLEAR_NEVER,
+	  .f = window_copy_cmd_open_location
 	},
 	{ .command = "open-output",
 	  .args = { "a", 0, 1, NULL },
