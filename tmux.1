@@ -1701,6 +1701,32 @@ the file is parsed but no commands are executed.
 .Fl v
 shows the parsed commands and line numbers if possible.
 .Tg start
+.It Xo Ic open\-file
+.Op Fl i Ar index
+.Op Fl t Ar target\-pane
+.Op Ar path
+.Xc
+Open a file with
+.Ic file\-open\-command .
+With
+.Fl i ,
+open entry
+.Ar index
+of the list made by the
+.Ql file_panel
+format for
+.Ar target\-pane ;
+the format makes each file that can be opened a clickable range named
+.Ql f
+followed by its index, so a mouse binding can use:
+.Bd -literal -offset indent
+open\-file \-i "#{s/^f//:mouse_status_range}"
+.Ed
+.Pp
+Otherwise
+.Ar path
+is opened, taken as relative to the directory of
+.Ar target\-pane .
 .It Xo Ic source\-theme
 .Op Fl l
 .Op Ar theme
@@ -3691,6 +3717,7 @@ which may be one of:
 .It Li "bottom-right-centre" Ta "Centre of bottom-right quadrant"
 .It Li "front" Ta "Front of floating panes"
 .It Li "back" Ta "Back of floating panes"
+.It Li "file_panel" Ta "" Ta "Files in the current pane's directory for the side status line"
 .It Li "forward" Ta "Forward one floating pane"
 .It Li "backward" Ta "Backward one floating pane"
 .It Li "forward-loop" Ta "Forward but back if already at front"
@@ -5311,6 +5338,38 @@ passed through to applications running in
 .Nm .
 Attached clients should be detached and attached again after changing this
 option.
+.It Ic file\-open\-command Ar command
+The command run by
+.Ic open\-file .
+.Ql %1
+is replaced by the file,
+.Ql %2
+by its directory and
+.Ql %3
+by the
+.Ic editor
+option, each quoted as a command argument.
+The default opens the file with the editor in a new pane to the right.
+.It Ic file\-panel\-code\-style Ar style
+Style of files that can be opened in the
+.Ql file_panel
+format.
+.It Ic file\-panel\-dir\-style Ar style
+Style of directories in the
+.Ql file_panel
+format.
+.It Ic file\-panel\-extensions Ar extensions
+Space-separated extensions of the files that can be opened from the
+.Ql file_panel
+format.
+.It Ic file\-panel\-limit Ar number
+The most entries shown by the
+.Ql file_panel
+format.
+.It Ic file\-panel\-style Ar style
+Style of other files in the
+.Ql file_panel
+format.
 .It Xo Ic focus\-follows\-mouse
 .Op Cm on | off
 .Xc

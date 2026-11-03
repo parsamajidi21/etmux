@@ -2343,6 +2343,13 @@ format_cb_pane_boot_stage(struct format_tree *ft)
 	return (xstrdup(ft->wp->boot->stage_name));
 }
 
+/* Callback for file_panel. */
+static void *
+format_cb_file_panel(struct format_tree *ft)
+{
+	return (file_panel(ft->wp, ft->s));
+}
+
 /* Callback for pane_dead. */
 static void *
 format_cb_pane_dead(struct format_tree *ft)
@@ -3866,6 +3873,9 @@ static const struct format_table_entry format_table[] = {
 	},
 	{ "cursor_y", FORMAT_TABLE_STRING,
 	  format_cb_cursor_y
+	},
+	{ "file_panel", FORMAT_TABLE_STRING,
+	  format_cb_file_panel
 	},
 	{ "history_added", FORMAT_TABLE_STRING,
 	  format_cb_history_added

@@ -4358,6 +4358,10 @@ void		 location_free(struct location *);
 char		*location_rewrite(const char *, struct options *);
 char		*location_ssh_host(struct window_pane *);
 
+/* file-panel.c */
+char		*file_panel_dir(struct window_pane *, struct session *);
+char		*file_panel(struct window_pane *, struct session *);
+
 /* output-match.c */
 extern u_int	 output_match_generation;
 void		 output_match_free(struct window_pane *);

@@ -173,6 +173,7 @@ dist_tmux_SOURCES = \
 	events.c \
 	file.c \
 	format-draw.c \
+	file-panel.c \
 	format.c \
 	fuzzy.c \
 	grid-reader.c \

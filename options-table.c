@@ -676,7 +676,7 @@ const struct options_table_entry options_table[] = {
 	  .type = OPTIONS_TABLE_STRING,
 	  .scope = OPTIONS_TABLE_SERVER,
 	  .flags = OPTIONS_TABLE_IS_COLOUR,
-	  .default_str = "#{?#{e|>=:#{client_colours},256},#16161e,black}",
+	  .default_str = "#{?#{e|>=:#{client_colours},256},#0a0a0a,black}",
 	  .text = "Dark theme background colour (themebg or @bg)."
 	},
 
@@ -1058,6 +1058,61 @@ const struct options_table_entry options_table[] = {
 	  .default_num = 750,
 	  .unit = "milliseconds",
 	  .text = "Time for which status line messages should appear."
+	},
+
+	{ .name = "file-open-command",
+	  .type = OPTIONS_TABLE_STRING,
+	  .scope = OPTIONS_TABLE_SESSION,
+	  .default_str = "split-window -h -l 55% -c %2 %3 %1",
+	  .text = "Command run by 'open-file'. '%1' is replaced by the file, "
+		  "'%2' by its directory and '%3' by the 'editor' option, "
+		  "each quoted as a command argument."
+	},
+
+	{ .name = "file-panel-code-style",
+	  .type = OPTIONS_TABLE_STRING,
+	  .scope = OPTIONS_TABLE_SESSION,
+	  .default_str = "fg=themeaccent",
+	  .flags = OPTIONS_TABLE_IS_STYLE,
+	  .separator = ",",
+	  .text = "Style of files in '#{file_panel}' that can be opened."
+	},
+
+	{ .name = "file-panel-dir-style",
+	  .type = OPTIONS_TABLE_STRING,
+	  .scope = OPTIONS_TABLE_SESSION,
+	  .default_str = "fg=thememuted,bold",
+	  .flags = OPTIONS_TABLE_IS_STYLE,
+	  .separator = ",",
+	  .text = "Style of directories in '#{file_panel}'."
+	},
+
+	{ .name = "file-panel-extensions",
+	  .type = OPTIONS_TABLE_STRING,
+	  .scope = OPTIONS_TABLE_SESSION,
+	  .default_str = "c cc cpp cxx h hh hpp hxx rs py json js ts go java "
+			 "kt sh mk cmake dts dtsi bb bbappend bbclass inc "
+			 "conf yaml yml toml md txt",
+	  .text = "Extensions of files that can be opened from "
+		  "'#{file_panel}'."
+	},
+
+	{ .name = "file-panel-limit",
+	  .type = OPTIONS_TABLE_NUMBER,
+	  .scope = OPTIONS_TABLE_SESSION,
+	  .minimum = 1,
+	  .maximum = 1000,
+	  .default_num = 20,
+	  .text = "Most entries shown by '#{file_panel}'."
+	},
+
+	{ .name = "file-panel-style",
+	  .type = OPTIONS_TABLE_STRING,
+	  .scope = OPTIONS_TABLE_SESSION,
+	  .default_str = "fg=thememuted",
+	  .flags = OPTIONS_TABLE_IS_STYLE,
+	  .separator = ",",
+	  .text = "Style of other files in '#{file_panel}'."
 	},
 
 	{ .name = "focus-follows-mouse",

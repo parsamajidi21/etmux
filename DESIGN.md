@@ -313,3 +313,27 @@ from the terminal's reported background) gets seven more slots: `themebg`,
 | Terminal does not answer the OSC 11 background query | Treated as dark (existing behaviour); `source-theme dark` or `light` forces one. |
 | 16-colour terminal or Linux console | The basic colour fallbacks are used. |
 | Missing theme file | Same error as `source-file`. |
+
+## Side panel file list
+
+**Format:** `file_panel` lists the active pane's directory (the cwd of its
+foreground process; for a serial pane, or when that is unknown, the pane's
+start directory or the session's).
+- Directories come first, then files by name; hidden files are left out.
+- At most `file-panel-limit` entries are shown, then "N more".
+- Files with an extension in `file-panel-extensions` become clickable
+  ranges named `f<index>`. Range names are limited to 15 characters, so
+  the name holds an index, not the path.
+
+**Command:** `open-file -i N` lists the directory again in the same order
+to find entry N, then runs `file-open-command`. That command has the path,
+the directory and the `editor` words substituted, each escaped as a tmux
+argument with `args_escape`, so no shell is involved and any file name is
+safe. The default splits the pane and runs the editor.
+
+**Failure modes:**
+
+| Case | Behaviour |
+| --- | --- |
+| Directory changed between drawing and the click | The index can point at a different entry. The panel redraws every `status-interval`; a stale click opens a neighbouring file at worst. Directories and out-of-range indexes are refused. |
+| Very large directories | Each redraw reads the directory. `file-panel-limit` caps what is drawn, but not the `readdir`. |
