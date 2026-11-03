@@ -185,7 +185,7 @@ in one second do not share a file. Reaching the last stage freezes
   replays `regress/fixtures/boot-imx8-linux.log` (twice) and
   `boot-android.log`. It checks stages, counts, the autoboot key, the
   earlier-stage reset, `boot-report` and per-boot logs.
-- `regress/replay-boot.sh` replays a log at a set line rate.
+- `regress/fixtures/replay-boot.sh` replays a log at a set line rate.
 
 ## A3. file:line to editor from copy mode
 

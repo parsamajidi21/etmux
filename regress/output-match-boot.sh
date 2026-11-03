@@ -56,7 +56,7 @@ wait_for()
 
 replay()
 {
-	DELAY=0.005 sh "$HERE/replay-boot.sh" "$HERE/fixtures/$1" "$OUT/board"
+	DELAY=0.005 sh "$HERE/fixtures/replay-boot.sh" "$HERE/fixtures/$1" "$OUT/board"
 }
 
 $TMUX new -d -s s -x 120 -y 30 'cat' || fail "new-session failed"
