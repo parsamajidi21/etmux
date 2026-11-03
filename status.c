@@ -496,6 +496,7 @@ status_side_redraw(struct client *c)
 	/* Draw the line on the edge next to the window area. */
 	if (linex != -1) {
 		memcpy(&lgc, &gc, sizeof lgc);
+		style_add(&lgc, s->options, "side-status-border-style", NULL);
 		lgc.attr |= GRID_ATTR_CHARSET;
 		for (n = 0; n < rows; n++) {
 			screen_write_cursormove(&ctx, linex, n, 0);

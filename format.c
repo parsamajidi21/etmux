@@ -2888,6 +2888,36 @@ format_cb_serial_bar(struct format_tree *ft)
 	return (serial_bar(ft->s));
 }
 
+/* Callback for serial_device_count. */
+static void *
+format_cb_serial_device_count(struct format_tree *ft)
+{
+	if (ft->s == NULL)
+		return (NULL);
+	return (format_printf("%u", serial_count(ft->s, NULL)));
+}
+
+/* Callback for serial_panel. */
+static void *
+format_cb_serial_panel(struct format_tree *ft)
+{
+	if (ft->s == NULL)
+		return (NULL);
+	return (serial_panel(ft->s));
+}
+
+/* Callback for serial_open_count. */
+static void *
+format_cb_serial_open_count(struct format_tree *ft)
+{
+	u_int	open;
+
+	if (ft->s == NULL)
+		return (NULL);
+	serial_count(ft->s, &open);
+	return (format_printf("%u", open));
+}
+
 /* Callback for server_sessions. */
 static void *
 format_cb_server_sessions(__unused struct format_tree *ft)
@@ -4063,6 +4093,15 @@ static const struct format_table_entry format_table[] = {
 	},
 	{ "serial_bar", FORMAT_TABLE_STRING,
 	  format_cb_serial_bar
+	},
+	{ "serial_device_count", FORMAT_TABLE_STRING,
+	  format_cb_serial_device_count
+	},
+	{ "serial_open_count", FORMAT_TABLE_STRING,
+	  format_cb_serial_open_count
+	},
+	{ "serial_panel", FORMAT_TABLE_STRING,
+	  format_cb_serial_panel
 	},
 	{ "server_sessions", FORMAT_TABLE_STRING,
 	  format_cb_server_sessions

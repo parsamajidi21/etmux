@@ -1136,6 +1136,24 @@ const struct options_table_entry options_table[] = {
 		  "right of the terminal."
 	},
 
+	{ .name = "side-status-animation",
+	  .type = OPTIONS_TABLE_FLAG,
+	  .scope = OPTIONS_TABLE_SESSION,
+	  .default_num = 1,
+	  .text = "Whether 'toggle-side-status' slides the side status line "
+		  "in and out."
+	},
+
+	{ .name = "side-status-border-style",
+	  .type = OPTIONS_TABLE_STRING,
+	  .scope = OPTIONS_TABLE_SESSION,
+	  .default_str = "default",
+	  .flags = OPTIONS_TABLE_IS_STYLE,
+	  .separator = ",",
+	  .text = "Style of the line separating the side status line from "
+		  "the window."
+	},
+
 	{ .name = "side-status-format",
 	  .type = OPTIONS_TABLE_STRING,
 	  .scope = OPTIONS_TABLE_SESSION,

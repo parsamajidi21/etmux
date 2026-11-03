@@ -34,7 +34,8 @@
  * - choose-serial -d device does the same without a menu (used by the
  *   clickable status bar);
  * - choose-serial -B shows a menu to change the serial-baud option;
- * - the serial_bar format lists the devices as clickable status line ranges.
+ * - the serial_device_count and serial_open_count formats count them;
+ * - the serial_bar and serial_panel formats list the devices as clickable status line ranges.
  *
  * If a console is already open on a device, it is focused instead of a
  * second one being opened.
@@ -244,43 +245,67 @@ serial_command(struct serial_device *sd, const char *template,
 }
 
 /*
- * Status line markup for the serial_bar format: one clickable range per
+ * Status line markup for the serial_bar (horizontal) and serial_panel
+ * (vertical, for the side status line) formats: one clickable range per
  * device. The range string is "@" followed by the device name.
  */
-char *
-serial_bar(struct session *s)
+static char *
+serial_markup(struct session *s, int vertical)
 {
 	struct serial_device	*list, *sd;
 	u_int			 n, i;
-	const char		*style, *active;
-	char			*buf = NULL, *product, *item;
+	const char		*style, *active, *st, *dot;
+	char			*buf = NULL, *product = NULL, *item;
 	size_t			 len = 0, add;
-	int			 open;
 
 	style = options_get_string(s->options, "serial-device-style");
 	active = options_get_string(s->options, "serial-device-active-style");
 
 	n = serial_list(s, &list);
 	if (n == 0) {
+		if (vertical)
+			return (xstrdup("#[dim]   no devices#[default]#[nl]"));
 		xasprintf(&buf, "#[%s dim] no UART devices #[default]", style);
 		return (buf);
 	}
 	for (i = 0; i < n; i++) {
 		sd = &list[i];
-		open = (serial_find_pane(sd->path) != NULL);
-		if (sd->product != NULL) {
+		if (serial_find_pane(sd->path) != NULL) {
+			st = active;
+			dot = "●";
+		} else {
+			st = style;
+			dot = "○";
+		}
+		if (sd->product != NULL)
 			product = serial_escape(sd->product);
+
+		if (vertical) {
+			/* Name on one line, product dimmed underneath. */
+			if (product != NULL) {
+				xasprintf(&item, "#[range=user|@%.14s]   #[%s]%s "
+				    "%s#[default]#[norange]#[nl]"
+				    "#[range=user|@%.14s]#[dim]     %s"
+				    "#[default]#[norange]#[nl]",
+				    sd->name, st, dot, sd->name, sd->name,
+				    product);
+			} else {
+				xasprintf(&item, "#[range=user|@%.14s]   #[%s]%s "
+				    "%s#[default]#[norange]#[nl]", sd->name, st,
+				    dot, sd->name);
+			}
+		} else if (product != NULL) {
 			xasprintf(&item, "%s#[range=user|@%.14s]#[%s] %s %s "
 			    "#[dim]%s #[default]#[norange]", i == 0 ? "" : " ",
-			    sd->name, open ? active : style, open ? "●" : "○",
-			    sd->name, product);
-			free(product);
+			    sd->name, st, dot, sd->name, product);
 		} else {
 			xasprintf(&item, "%s#[range=user|@%.14s]#[%s] %s %s "
 			    "#[default]#[norange]", i == 0 ? "" : " ",
-			    sd->name, open ? active : style, open ? "●" : "○",
-			    sd->name);
+			    sd->name, st, dot, sd->name);
 		}
+		free(product);
+		product = NULL;
+
 		add = strlen(item);
 		buf = xrealloc(buf, len + add + 1);
 		memcpy(buf + len, item, add + 1);
@@ -291,22 +316,68 @@ serial_bar(struct session *s)
 	return (buf);
 }
 
+char *
+serial_bar(struct session *s)
+{
+	return (serial_markup(s, 0));
+}
+
+char *
+serial_panel(struct session *s)
+{
+	return (serial_markup(s, 1));
+}
+
 /* Centre a menu on the window and show it. */
 static void
 serial_show_menu(struct cmdq_item *item, struct menu *menu,
     struct client *tc, struct cmd_find_state *target, int choice)
 {
-	struct window	*w = target->w;
-	enum box_lines	 lines;
-	u_int		 sx, sy, px, py;
+	struct key_event	*event = cmdq_get_event(item);
+	struct window		*w = target->w;
+	enum box_lines		 lines;
+	u_int			 sx, sy, px, py;
+	int			 flags = 0;
 
+	/*
+	 * Opened by a mouse click (on the status line): pop up from the
+	 * bottom-right corner, just above the bar, and accept mouse clicks.
+	 * Otherwise centre it and use the keyboard.
+	 */
+	if (event->m.valid)
+		w = tc->session->curw->window;
 	lines = options_get_number(w->options, "menu-border-lines");
 	menu_get_size(menu, lines, &sx, &sy);
-	px = (w->sx > sx) ? (w->sx - sx) / 2 : 0;
-	py = (w->sy > sy) ? (w->sy - sy) / 2 : 0;
-	if (menu_display(menu, MENU_NOMOUSE, choice, item, px, py, tc, lines,
+	if (event->m.valid) {
+		px = (w->sx > sx) ? w->sx - sx : 0;
+		py = (w->sy > sy) ? w->sy - sy : 0;
+	} else {
+		px = (w->sx > sx) ? (w->sx - sx) / 2 : 0;
+		py = (w->sy > sy) ? (w->sy - sy) / 2 : 0;
+		flags |= MENU_NOMOUSE;
+	}
+	if (menu_display(menu, flags, choice, item, px, py, tc, lines,
 	    NULL, NULL, NULL, target, NULL, NULL) != 0)
 		menu_free(menu);
+}
+
+/* Count devices, and how many of them have an open console. */
+u_int
+serial_count(struct session *s, u_int *open)
+{
+	struct serial_device	*list;
+	u_int			 n, i;
+
+	n = serial_list(s, &list);
+	if (open != NULL) {
+		*open = 0;
+		for (i = 0; i < n; i++) {
+			if (serial_find_pane(list[i].path) != NULL)
+				(*open)++;
+		}
+	}
+	serial_free(list, n);
+	return (n);
 }
 
 /* Menu of common baud rates. */
