@@ -233,7 +233,7 @@ set -g serial-baud 921600                     # default baud for new panes
 set -g serial-log-dir ~/serial-logs           # one log per boot
 set -g autoboot-interrupt " "                 # stop U-Boot autoboot
 set -g output-match[0] "panic:Kernel panic"   # alert on a pattern
-set -g editor "code -w"                       # editor for open-file
+set -g editor nvim                            # editor (default: vim)
 set -g open-location-rewrite[0] "^/workdir/=>/home/me/yocto/"
 set -g file-open-width 50                     # width of the file column
 set -g side-status right                      # panel on the right
