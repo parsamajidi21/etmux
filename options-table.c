@@ -1092,9 +1092,9 @@ const struct options_table_entry options_table[] = {
 	  .scope = OPTIONS_TABLE_SESSION,
 	  .choices = options_table_file_open_mode_list,
 	  .default_num = 0,
-	  .text = "Where 'open-file' shows a file: in a pane to the right of "
-		  "the current pane, or in a window of its own using "
-		  "'file-open-command'."
+	  .text = "Where 'open-file' shows a file: in a pane in the current "
+		  "window, stacked to the right of the first pane, or in a "
+		  "window of its own using 'file-open-command'."
 	},
 
 	{ .name = "file-open-terminal",
@@ -1122,7 +1122,8 @@ const struct options_table_entry options_table[] = {
 	  .maximum = 90,
 	  .default_num = 55,
 	  .unit = "percent",
-	  .text = "Width of the pane 'open-file' opens to the right."
+	  .text = "Width of the column of files 'open-file' opens on the "
+		  "right."
 	},
 
 	{ .name = "file-panel-code-style",

@@ -411,80 +411,72 @@ file_panel_find_pane(struct session *s, const char *path)
 	return (NULL);
 }
 
-/* The pane in a window showing an opened file, if any. */
+/* The last pane in a window showing an opened file, if any. */
 static struct window_pane *
 file_panel_side_pane(struct window *w)
 {
-	struct window_pane	*wp;
+	struct window_pane	*wp, *last = NULL;
 
 	TAILQ_FOREACH(wp, &w->panes, entry) {
 		if (options_get_only(wp->options, "@open-file") != NULL)
-			return (wp);
+			last = wp;
 	}
-	return (NULL);
-}
-
-/* Escaped base name of the file a pane shows, for its window name. */
-static char *
-file_panel_pane_name(struct window_pane *wp)
-{
-	const char	*path, *name;
-
-	path = options_get_string(wp->options, "@open-file");
-	name = strrchr(path, '/');
-	name = (name != NULL && name[1] != '\0') ? name + 1 : path;
-	return (args_escape(name));
+	return (last);
 }
 
 /*
- * Open beside the terminal: the file goes in a pane to the right of the
- * target pane. A file already in that pane moves to a window of its own in
- * the background, and a file already open elsewhere is swapped in.
+ * Open in the current window: the first pane (the terminal) stays on the
+ * left as the main pane and opened files are stacked evenly in a column on
+ * its right (the main-vertical layout). A file already open in the window
+ * is selected; one open in another window is moved here.
  */
 static char *
 file_panel_open_side(struct cmd_find_state *target, const char *path,
     const char *edir, const char *command)
 {
 	struct window		*w = target->w;
-	struct window_pane	*e, *r;
-	char			*cmd, *epath, *rname;
+	struct window_pane	*e, *last, *first;
+	char			*cmd, *epath, *layout;
 	u_int			 size;
 
 	size = options_get_number(target->s->options, "file-open-width");
 	e = file_panel_find_pane(target->s, path);
-	r = file_panel_side_pane(w);
+	last = file_panel_side_pane(w);
+	first = TAILQ_FIRST(&w->panes);
 
-	if (e != NULL && e == r) {
+	if (e != NULL && e->window == w) {
 		xasprintf(&cmd, "select-pane -t %%%u", e->id);
 		return (cmd);
 	}
-	if (e != NULL && r != NULL) {
-		rname = file_panel_pane_name(r);
-		xasprintf(&cmd, "swap-pane -d -s %%%u -t %%%u ; "
-		    "rename-window -t @%u %s ; select-pane -t %%%u", e->id,
-		    r->id, e->window->id, rname, e->id);
-		free(rname);
-		return (cmd);
-	}
+
+	xasprintf(&layout, "set -w -t @%u main-pane-width %u%% ; "
+	    "select-layout -t @%u main-vertical", w->id, 100 - size, w->id);
 	if (e != NULL) {
-		xasprintf(&cmd, "join-pane -h -l %u%% -s %%%u -t %%%u ; "
-		    "select-pane -t %%%u", size, e->id, target->wp->id, e->id);
+		if (last != NULL) {
+			xasprintf(&cmd, "join-pane -v -s %%%u -t %%%u ; %s ; "
+			    "select-pane -t %%%u", e->id, last->id, layout,
+			    e->id);
+		} else {
+			xasprintf(&cmd, "join-pane -h -s %%%u -t %%%u ; %s ; "
+			    "select-pane -t %%%u", e->id, first->id, layout,
+			    e->id);
+		}
+		free(layout);
 		return (cmd);
 	}
 
 	epath = args_escape(path);
-	if (r != NULL) {
-		rname = file_panel_pane_name(r);
-		xasprintf(&cmd, "split-window -h -t %%%u -c %s %s ; "
-		    "set -p @open-file %s ; break-pane -d -s %%%u -n %s",
-		    r->id, edir, command, epath, r->id, rname);
-		free(rname);
+	if (last != NULL) {
+		xasprintf(&cmd, "split-window -v -t %%%u -c %s %s ; "
+		    "set -p @open-file %s ; %s", last->id, edir, command, epath,
+		    layout);
 	} else {
-		xasprintf(&cmd, "split-window -h -l %u%% -t %%%u -c %s %s ; "
-		    "set -p @open-file %s", size, target->wp->id, edir,
-		    command, epath);
+		xasprintf(&cmd, "split-window -h -t %%%u -c %s %s ; "
+		    "set -p @open-file %s ; %s", first->id, edir, command,
+		    epath, layout);
 	}
 	free(epath);
+	free(layout);
 	return (cmd);
 }
 

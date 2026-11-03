@@ -1706,8 +1706,7 @@ shows the parsed commands and line numbers if possible.
 .Op Fl t Ar target\-pane
 .Op Ar path
 .Xc
-Open a file or directory, by default in a pane to the right of
-.Ar target\-pane
+Open a file or directory, by default as a pane in the current window
 (see
 .Ic file\-open\-mode ) :
 a text file with the
@@ -5375,16 +5374,18 @@ Where
 shows a file.
 With
 .Cm right
-(the default) it is shown in a pane to the right of the current pane, which
-stays where it is; opening another file moves the one shown there to a
-background window of its own (named after the file) and opening a file that
-is already open swaps it back in.
+(the default) it opens as a pane in the current window: the first pane
+(usually the shell) stays on the left at full height and files are stacked
+evenly in a column on its right, using the
+.Ic main\-vertical
+layout.
+Opening a file that is already open selects its pane.
 With
 .Cm window ,
 each file opens with
 .Ic file\-open\-command .
 .It Ic file\-open\-width Ar percentage
-Width of the pane opened to the right; the default is 55.
+Width of the column of files on the right; the default is 55.
 .It Xo Ic file\-open\-terminal
 .Op Ic on | off
 .Xc

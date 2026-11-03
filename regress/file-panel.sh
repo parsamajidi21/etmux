@@ -86,37 +86,31 @@ $TMUX open-file -t s:0 -i 5
 $TMUX open-file -t s:0 src/new.c || fail "open-file with a path failed"
 $TMUX open-file -t s:0 -i 99 2>/dev/null && fail "opened a bad index"
 
-# file-open-mode right (default): the terminal stays, the file is on its
-# right, the previous file goes to its own window and comes back when
-# opened again.
+# file-open-mode right (default): files open as panes in the same window,
+# stacked to the right of the terminal, which keeps the full height on the
+# left; opening an open file selects its pane.
 $TMUX kill-server
-$TMUX new -d -s r -x 200 -y 30 -c "$OUT/p" || fail "new-session failed"
+$TMUX new -d -s r -x 200 -y 40 -c "$OUT/p" || fail "new-session failed"
 $TMUX set -g editor "tail -f"
 term=$($TMUX display -p -t r: '#{pane_id}')
-side()
-{
-	$TMUX list-panes -t r:0 -F '#{pane_id}:#{b:@open-file}' | tr '\n' ' '
-}
+for f in main.c lib.rs README; do
+	$TMUX open-file -t "$term" "$f" || fail "open-file $f failed"
+done
+[ "$($TMUX display -p -t r: '#{session_windows}')" = "1" ] || \
+	fail "open-file made a window"
+[ "$($TMUX list-panes -t r: -F '#{b:@open-file}' | tr '\n' ' ')" = \
+	" main.c lib.rs README " ] || \
+	fail "wrong panes: $($TMUX list-panes -t r: -F '#{b:@open-file}' | tr '\n' ' ')"
+[ "$($TMUX display -p -t "$term" '#{pane_left} #{pane_height}')" = \
+	"0 $($TMUX display -p -t r: '#{window_height}')" ] || \
+	fail "terminal is not full height on the left"
+$TMUX list-panes -t r: -F '#{pane_left} #{b:@open-file}' | \
+	awk '$2 != "" && $1 == 0 { exit 1 }' || fail "a file is not on the right"
+n=$($TMUX list-panes -t r: | wc -l)
 $TMUX open-file -t "$term" main.c
-p1=$($TMUX list-panes -t r:0 -F '#{pane_id} #{b:@open-file}' | \
-	awk '$2 == "main.c" { print $1 }')
-[ "$(side)" = "$term: $p1:main.c " ] || fail "main.c not beside: $(side)"
-[ "$($TMUX display -p -t "$term" '#{pane_left}')" = "0" ] || \
-	fail "terminal moved"
-$TMUX open-file -t "$term" lib.rs
-case "$(side)" in
-"$term: %"*":lib.rs ") ;;
-*) fail "lib.rs not beside: $(side)" ;;
-esac
-$TMUX list-windows -t r: -F '#{window_name}' | grep -qx main.c || \
-	fail "main.c not moved to its own window"
-$TMUX open-file -t "$term" main.c
-[ "$(side)" = "$term: $p1:main.c " ] || fail "main.c not swapped back"
-$TMUX list-windows -t r: -F '#{window_name}' | grep -qx lib.rs || \
-	fail "lib.rs not moved to its own window"
-n=$($TMUX list-panes -s -t r: | wc -l)
-$TMUX open-file -t "$term" main.c
-[ "$($TMUX list-panes -s -t r: | wc -l)" = "$n" ] || \
-	fail "opening the shown file again made a pane"
+[ "$($TMUX list-panes -t r: | wc -l)" = "$n" ] || \
+	fail "opening an open file made a pane"
+[ "$($TMUX display -p -t r: '#{b:@open-file}')" = "main.c" ] || \
+	fail "opening an open file did not select it"
 
 exit 0
