@@ -3195,6 +3195,9 @@ char		*cmd_template_replace(const char *, const char *, int);
 enum cmd_retval	 cmd_attach_session(struct cmdq_item *, const char *, int, int,
 		     int, const char *, int, const char *);
 
+/* cmd-choose-serial.c */
+char		*serial_bar(struct session *);
+
 /* cmd-parse.c */
 struct cmd_parse_result *cmd_parse_from_file(FILE *, struct cmd_parse_input *);
 struct cmd_parse_result *cmd_parse_from_string(const char *,

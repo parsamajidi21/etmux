@@ -1070,6 +1070,49 @@ const struct options_table_entry options_table[] = {
 		  "with the '-r' flag."
 	},
 
+	{ .name = "serial-baud",
+	  .type = OPTIONS_TABLE_NUMBER,
+	  .scope = OPTIONS_TABLE_SESSION,
+	  .minimum = 50,
+	  .maximum = 16000000,
+	  .default_num = 115200,
+	  .text = "Baud rate used by 'choose-serial' ('%3' in "
+		  "'serial-command')."
+	},
+
+	{ .name = "serial-command",
+	  .type = OPTIONS_TABLE_STRING,
+	  .scope = OPTIONS_TABLE_SESSION,
+	  .default_str = "split-window -h -l 45% 'exec picocom -b %3 %1' ; "
+			 "select-pane -T '%2 @ %3' ; "
+			 "set -p remain-on-exit failed",
+	  .text = "Command run by 'choose-serial' to open a console. '%1' is "
+		  "replaced by the device path, '%2' by the device name and "
+		  "'%3' by the baud rate."
+	},
+
+	{ .name = "serial-device-active-style",
+	  .type = OPTIONS_TABLE_STRING,
+	  .scope = OPTIONS_TABLE_SESSION,
+	  .default_str = "fg=themegreen bold",
+	  .text = "Style of a device in '#{serial_bar}' with an open console."
+	},
+
+	{ .name = "serial-device-style",
+	  .type = OPTIONS_TABLE_STRING,
+	  .scope = OPTIONS_TABLE_SESSION,
+	  .default_str = "default",
+	  .text = "Style of a device in '#{serial_bar}'."
+	},
+
+	{ .name = "serial-devices",
+	  .type = OPTIONS_TABLE_STRING,
+	  .scope = OPTIONS_TABLE_SESSION,
+	  .default_str = "/dev/ttyUSB* /dev/ttyACM*",
+	  .text = "Space-separated glob patterns of serial devices shown by "
+		  "'choose-serial' and '#{serial_bar}'."
+	},
+
 	{ .name = "set-titles",
 	  .type = OPTIONS_TABLE_FLAG,
 	  .scope = OPTIONS_TABLE_SESSION,
@@ -1088,7 +1131,7 @@ const struct options_table_entry options_table[] = {
 	  .type = OPTIONS_TABLE_CHOICE,
 	  .scope = OPTIONS_TABLE_SESSION,
 	  .choices = options_table_side_status_list,
-	  .default_num = 0,
+	  .default_num = 2,
 	  .text = "Whether to draw a vertical status line at the left or "
 		  "right of the terminal."
 	},
@@ -1103,7 +1146,7 @@ const struct options_table_entry options_table[] = {
 	{ .name = "side-status-style",
 	  .type = OPTIONS_TABLE_STRING,
 	  .scope = OPTIONS_TABLE_SESSION,
-	  .default_str = "fg=themegreen",
+	  .default_str = "bg=#000080,fg=white",
 	  .flags = OPTIONS_TABLE_IS_STYLE,
 	  .separator = ",",
 	  .text = "Style of the side status line."
@@ -1130,7 +1173,7 @@ const struct options_table_entry options_table[] = {
 	  .type = OPTIONS_TABLE_CHOICE,
 	  .scope = OPTIONS_TABLE_SESSION,
 	  .choices = options_table_status_list,
-	  .default_num = 1,
+	  .default_num = 0,
 	  .text = "Number of lines in the status line."
 	},
 
@@ -1252,7 +1295,7 @@ const struct options_table_entry options_table[] = {
 	{ .name = "status-style",
 	  .type = OPTIONS_TABLE_STRING,
 	  .scope = OPTIONS_TABLE_SESSION,
-	  .default_str = "bg=themegreen,fg=themeblack",
+	  .default_str = "bg=#000080,fg=white",
 	  .flags = OPTIONS_TABLE_IS_STYLE,
 	  .separator = ",",
 	  .text = "Style of the status line."

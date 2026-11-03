@@ -2879,6 +2879,15 @@ format_cb_scroll_region_upper(struct format_tree *ft)
 	return (NULL);
 }
 
+/* Callback for serial_bar. */
+static void *
+format_cb_serial_bar(struct format_tree *ft)
+{
+	if (ft->s == NULL)
+		return (NULL);
+	return (serial_bar(ft->s));
+}
+
 /* Callback for server_sessions. */
 static void *
 format_cb_server_sessions(__unused struct format_tree *ft)
@@ -4051,6 +4060,9 @@ static const struct format_table_entry format_table[] = {
 	},
 	{ "scroll_region_upper", FORMAT_TABLE_STRING,
 	  format_cb_scroll_region_upper
+	},
+	{ "serial_bar", FORMAT_TABLE_STRING,
+	  format_cb_serial_bar
 	},
 	{ "server_sessions", FORMAT_TABLE_STRING,
 	  format_cb_server_sessions
