@@ -9984,6 +9984,14 @@ Default
 configuration file.
 .It Pa @SYSCONFDIR@/tmux.conf
 System-wide configuration file.
+.It Pa @DATADIR@/etmux/etmux.conf
+The etmux configuration (side panel, bottom bar, serial and file
+features, theme), loaded before the other files so they can change it.
+Start
+.Nm
+with
+.Fl f
+to load only a given file instead.
 .El
 .Sh EXAMPLES
 To create a new

@@ -4,14 +4,14 @@ CLEANFILES = tmux.1.mdoc tmux.1.man cmd-parse.c
 
 # Distribution tarball options.
 EXTRA_DIST = \
-	CHANGES README COPYING example_tmux.conf \
+	CHANGES README COPYING example_tmux.conf embedded-modern.tmux.conf \
 	osdep-*.c mdoc2man.awk tmux.1
 dist_EXTRA_tmux_SOURCES = compat/*.[ch]
 
 # Preprocessor flags.
 AM_CPPFLAGS += @XOPEN_DEFINES@ \
 	-DTMUX_VERSION='"@VERSION@"' \
-	-DTMUX_CONF='"$(sysconfdir)/tmux.conf:~/.tmux.conf:$$XDG_CONFIG_HOME/tmux/tmux.conf:~/.config/tmux/tmux.conf"' \
+	-DTMUX_CONF='"$(datadir)/etmux/etmux.conf:$(sysconfdir)/tmux.conf:~/.tmux.conf:$$XDG_CONFIG_HOME/tmux/tmux.conf:~/.config/tmux/tmux.conf"' \
 	-DTMUX_LOCK_CMD='"@DEFAULT_LOCK_CMD@"' \
 	-DTMUX_TERM='"@DEFAULT_TERM@"' \
 	-DTMUX_MOUSE=1
@@ -302,16 +302,22 @@ endif
 # Install tmux.1 in the right format.
 install-exec-hook:
 	if test x@MANFORMAT@ = xmdoc; then \
-		sed -e "s|@SYSCONFDIR@|$(sysconfdir)|g" $(srcdir)/tmux.1 \
+		sed -e "s|@SYSCONFDIR@|$(sysconfdir)|g" \
+		    -e "s|@DATADIR@|$(datadir)|g" $(srcdir)/tmux.1 \
 			>$(srcdir)/tmux.1.mdoc; \
 	else \
-		sed -e "s|@SYSCONFDIR@|$(sysconfdir)|g" $(srcdir)/tmux.1| \
+		sed -e "s|@SYSCONFDIR@|$(sysconfdir)|g" \
+		    -e "s|@DATADIR@|$(datadir)|g" $(srcdir)/tmux.1| \
 			$(AWK) -f $(srcdir)/mdoc2man.awk >$(srcdir)/tmux.1.man; \
 	fi
 	$(mkdir_p) $(DESTDIR)$(mandir)/man1
 	$(INSTALL_DATA) $(srcdir)/tmux.1.@MANFORMAT@ \
 		$(DESTDIR)$(mandir)/man1/tmux.1
+	$(mkdir_p) $(DESTDIR)$(datadir)/etmux
+	$(INSTALL_DATA) $(srcdir)/embedded-modern.tmux.conf \
+		$(DESTDIR)$(datadir)/etmux/etmux.conf
 
 # And uninstall it.
 uninstall-hook:
 	rm -f $(DESTDIR)$(mandir)/man1/tmux.1
+	rm -f $(DESTDIR)$(datadir)/etmux/etmux.conf

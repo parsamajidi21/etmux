@@ -9,8 +9,9 @@ and BSP developers. It adds the following to tmux:
 - a clickable side panel
 - a modern look
 
-It is still tmux. With your existing `~/.tmux.conf`, it behaves exactly
-like upstream tmux. Every new feature is opt-in.
+It is still tmux: the commands, options and key bindings you know all
+work. The etmux configuration is installed and loaded automatically, and
+your own `~/.tmux.conf` is loaded after it, so your settings always win.
 
 ```
 ┌ TABS ──────────────┬──────────────────────────┬──────────────────────────┐
@@ -168,13 +169,20 @@ tmux kill-server     # closes your current tmux sessions
 tmux
 ```
 
-### 5. Use the example configuration (optional)
+### 5. Configuration
 
-```sh
-cp embedded-modern.tmux.conf ~/.tmux.conf
-# or keep your own config and add at the end of it:
-#   source-file /path/to/etmux/embedded-modern.tmux.conf
-```
+`make install` also installs the etmux configuration (side panel, bottom
+bar, serial and file features, black theme) as
+`/usr/local/share/etmux/etmux.conf`. etmux **loads it automatically**,
+before your own config, so there is nothing to copy.
+
+- **Change anything** in your `~/.tmux.conf`; it is loaded afterwards and
+  wins. For example `set -g side-status right` or `set -g editor "code -w"`.
+- **Start plain tmux** with `tmux -f ~/.tmux.conf`, which loads only your
+  file.
+- **Tweak the whole thing:** the source is
+  [embedded-modern.tmux.conf](embedded-modern.tmux.conf). Copy it to
+  `~/.tmux.conf` and edit it there.
 
 ### Serial port permissions
 
@@ -187,7 +195,8 @@ sudo usermod -aG dialout "$USER"
 
 ## Quick reference
 
-These keys are from `embedded-modern.tmux.conf`; the prefix is `Ctrl+b`.
+These keys come from the installed etmux configuration; the prefix is
+`Ctrl+b`.
 
 | Key | Action |
 | --- | --- |
