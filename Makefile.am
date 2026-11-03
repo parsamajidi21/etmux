@@ -299,6 +299,10 @@ fuzz_json_fuzzer_LDFLAGS = $(FUZZING_LIBS)
 fuzz_json_fuzzer_LDADD = $(LDADD) $(tmux_OBJECTS)
 endif
 
+# tmux.c has the default configuration file list compiled in from
+# AM_CPPFLAGS; rebuild it when the Makefile (and so the list) changes.
+tmux.$(OBJEXT): Makefile
+
 # Install tmux.1 in the right format.
 install-exec-hook:
 	if test x@MANFORMAT@ = xmdoc; then \
