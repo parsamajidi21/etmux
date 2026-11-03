@@ -243,3 +243,73 @@ errors and warnings, kernel WARNING, ninja, soong, bitbake ParseError and
 Logfile, Python, make, and two lines with no location). It also checks
 cursor choice between two locations, the rewrite rules, `@remote-host`,
 and ssh host detection using a process with argv[0] `ssh`.
+
+## B1. Borders and layout
+
+Most of B1 was already in this tree; the work was checking it against the
+spec and fixing what was wrong.
+
+- **Rounded borders:** `pane-border-lines rounded` already existed and
+  shares its glyphs with rounded menus (`tty-acs.c`). The set used heavy
+  junctions (┳ ┻ ╋) with light lines and had ├ and ┤ swapped, so junctions
+  and rounded menu separators were drawn wrong. Fixed in its own commit.
+- **Title in the top border:** `pane-border-status top` plus
+  `pane-border-format` already does this. `#[align=left|centre|right]`
+  aligns the label; padding is spaces in the format, and `fill=` gives a
+  background.
+- **Dim inactive panes:** already there as `window-style "dim=N"`
+  (`tty.c`, `colour_dim()`). It dims foreground and background by N%.
+  Default colours are dimmed from the colours the terminal reports. On
+  terminals without RGB the result is converted to the nearest 256 or 16
+  colour, so it degrades instead of breaking. The built-in modern themes
+  use `dim=25`.
+- **Not done: `pane-gap` and inner padding.** The layout code (`layout.c`,
+  `layout-set.c`, `layout-custom.c`, the border cell maps in
+  `screen-redraw.c` and `window-border.c`) assumes a one-cell separator
+  between tiled panes in many places: sizes, offsets, the layout string
+  format, mouse resizing and floating panes. A gap of exactly one blank
+  cell is available today as `pane-border-lines spaces`. N cells means
+  replacing the "+ 1" separator with a per-window gap through the layout
+  code. It is worth doing, but as its own series with layout-string
+  compatibility tests, not squeezed into phase 1. The same goes for inner
+  padding, which also needs the pane's screen size to differ from its
+  cell.
+
+## B2. Theming
+
+**Semantic colours:** the existing theme colour mechanism (`colour.c`
+`colour_theme_table`, resolved per client in
+`server_client_update_theme_colours()`, with the light/dark choice coming
+from the terminal's reported background) gets seven more slots: `themebg`,
+`themefg`, `themeaccent`, `thememuted`, `themeok`, `themewarn`,
+`themeerror`.
+- Each has `dark-theme-*` and `light-theme-*` server options.
+- Like the existing ones, their defaults are formats that pick a true
+  colour value when `client_colours >= 256` and a basic colour otherwise.
+  A true colour value on a 256-colour terminal goes through the existing
+  nearest-colour conversion (`colour_find_rgb`), so the fallback is
+  automatic.
+- Every theme colour can also be written `@name` (`fg=@accent`,
+  `bg=@blue`). This is parsed in `colour_fromstring()`, so it works in any
+  style or colour option. `@` names that are not theme slots are rejected.
+- Changing a palette option already went through `options_push_changes()`,
+  which re-resolves theme colours for every client and redraws, so the
+  re-theming needed no new code.
+
+**`source-theme`** (`cmd-source-theme.c`):
+- The built-in `dark`, `light` and `auto` themes set `theme` (`dark`,
+  `light` or `detect`, where detect uses the terminal's reported
+  background) and a fixed list of style options, all in terms of `@`
+  colours, so the palette alone controls the colours.
+- `classic` unsets the same list (plus `theme`), returning each option to
+  its default. The regress test checks that the full `show -g` and
+  `show -gw` output matches a fresh server.
+- Any other argument is loaded as a file through `source-file`.
+
+**Failure modes:**
+
+| Case | Behaviour |
+| --- | --- |
+| Terminal does not answer the OSC 11 background query | Treated as dark (existing behaviour); `source-theme dark` or `light` forces one. |
+| 16-colour terminal or Linux console | The basic colour fallbacks are used. |
+| Missing theme file | Same error as `source-file`. |

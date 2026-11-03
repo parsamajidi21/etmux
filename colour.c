@@ -82,6 +82,43 @@ static const struct {
 	  "dark-theme-magenta",
 	  "light-theme-magenta",
 	  5
+	},
+
+	/* Semantic colours. */
+	{ "themebg",
+	  "dark-theme-bg",
+	  "light-theme-bg",
+	  8
+	},
+	{ "themefg",
+	  "dark-theme-fg",
+	  "light-theme-fg",
+	  8
+	},
+	{ "themeaccent",
+	  "dark-theme-accent",
+	  "light-theme-accent",
+	  4
+	},
+	{ "thememuted",
+	  "dark-theme-muted",
+	  "light-theme-muted",
+	  8
+	},
+	{ "themeok",
+	  "dark-theme-ok",
+	  "light-theme-ok",
+	  2
+	},
+	{ "themewarn",
+	  "dark-theme-warn",
+	  "light-theme-warn",
+	  3
+	},
+	{ "themeerror",
+	  "dark-theme-error",
+	  "light-theme-error",
+	  1
 	}
 };
 
@@ -423,6 +460,10 @@ colour_fromstring(const char *s)
 
 	for (i = 0; i < nitems(colour_theme_table); i++) {
 		if (strcasecmp(s, colour_theme_table[i].name) == 0)
+			return (i|COLOUR_FLAG_THEME);
+		/* @accent is themeaccent, @blue is themeblue and so on. */
+		if (*s == '@' &&
+		    strcasecmp(s + 1, colour_theme_table[i].name + 5) == 0)
 			return (i|COLOUR_FLAG_THEME);
 	}
 

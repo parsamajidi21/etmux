@@ -672,6 +672,62 @@ const struct options_table_entry options_table[] = {
 		  "ANSI colours, or force the light or dark theme."
 	},
 
+	{ .name = "dark-theme-bg",
+	  .type = OPTIONS_TABLE_STRING,
+	  .scope = OPTIONS_TABLE_SERVER,
+	  .flags = OPTIONS_TABLE_IS_COLOUR,
+	  .default_str = "#{?#{e|>=:#{client_colours},256},#16161e,black}",
+	  .text = "Dark theme background colour (themebg or @bg)."
+	},
+
+	{ .name = "dark-theme-fg",
+	  .type = OPTIONS_TABLE_STRING,
+	  .scope = OPTIONS_TABLE_SERVER,
+	  .flags = OPTIONS_TABLE_IS_COLOUR,
+	  .default_str = "#{?#{e|>=:#{client_colours},256},#c0caf5,white}",
+	  .text = "Dark theme foreground colour (themefg or @fg)."
+	},
+
+	{ .name = "dark-theme-accent",
+	  .type = OPTIONS_TABLE_STRING,
+	  .scope = OPTIONS_TABLE_SERVER,
+	  .flags = OPTIONS_TABLE_IS_COLOUR,
+	  .default_str = "#{?#{e|>=:#{client_colours},256},#7aa2ff,blue}",
+	  .text = "Dark theme accent colour (themeaccent or @accent)."
+	},
+
+	{ .name = "dark-theme-muted",
+	  .type = OPTIONS_TABLE_STRING,
+	  .scope = OPTIONS_TABLE_SERVER,
+	  .flags = OPTIONS_TABLE_IS_COLOUR,
+	  .default_str = "#{?#{e|>=:#{client_colours},256},#6b7896,brightblack}",
+	  .text = "Dark theme muted text colour (thememuted or @muted)."
+	},
+
+	{ .name = "dark-theme-ok",
+	  .type = OPTIONS_TABLE_STRING,
+	  .scope = OPTIONS_TABLE_SERVER,
+	  .flags = OPTIONS_TABLE_IS_COLOUR,
+	  .default_str = "#{?#{e|>=:#{client_colours},256},#5fd7a7,green}",
+	  .text = "Dark theme success colour (themeok or @ok)."
+	},
+
+	{ .name = "dark-theme-warn",
+	  .type = OPTIONS_TABLE_STRING,
+	  .scope = OPTIONS_TABLE_SERVER,
+	  .flags = OPTIONS_TABLE_IS_COLOUR,
+	  .default_str = "#{?#{e|>=:#{client_colours},256},#e0af68,yellow}",
+	  .text = "Dark theme warning colour (themewarn or @warn)."
+	},
+
+	{ .name = "dark-theme-error",
+	  .type = OPTIONS_TABLE_STRING,
+	  .scope = OPTIONS_TABLE_SERVER,
+	  .flags = OPTIONS_TABLE_IS_COLOUR,
+	  .default_str = "#{?#{e|>=:#{client_colours},256},#f7768e,red}",
+	  .text = "Dark theme error colour (themeerror or @error)."
+	},
+
 	{ .name = "dark-theme-black",
 	  .type = OPTIONS_TABLE_STRING,
 	  .scope = OPTIONS_TABLE_SERVER,
@@ -750,6 +806,62 @@ const struct options_table_entry options_table[] = {
 	  .flags = OPTIONS_TABLE_IS_COLOUR,
 	  .default_str = "#{?#{e|>=:#{client_colours},256},mediumpurple,magenta}",
 	  .text = "Dark theme colour for magenta."
+	},
+
+	{ .name = "light-theme-bg",
+	  .type = OPTIONS_TABLE_STRING,
+	  .scope = OPTIONS_TABLE_SERVER,
+	  .flags = OPTIONS_TABLE_IS_COLOUR,
+	  .default_str = "#{?#{e|>=:#{client_colours},256},#e9ecf2,white}",
+	  .text = "Light theme background colour (themebg or @bg)."
+	},
+
+	{ .name = "light-theme-fg",
+	  .type = OPTIONS_TABLE_STRING,
+	  .scope = OPTIONS_TABLE_SERVER,
+	  .flags = OPTIONS_TABLE_IS_COLOUR,
+	  .default_str = "#{?#{e|>=:#{client_colours},256},#2a2f3a,black}",
+	  .text = "Light theme foreground colour (themefg or @fg)."
+	},
+
+	{ .name = "light-theme-accent",
+	  .type = OPTIONS_TABLE_STRING,
+	  .scope = OPTIONS_TABLE_SERVER,
+	  .flags = OPTIONS_TABLE_IS_COLOUR,
+	  .default_str = "#{?#{e|>=:#{client_colours},256},#2f5bd3,blue}",
+	  .text = "Light theme accent colour (themeaccent or @accent)."
+	},
+
+	{ .name = "light-theme-muted",
+	  .type = OPTIONS_TABLE_STRING,
+	  .scope = OPTIONS_TABLE_SERVER,
+	  .flags = OPTIONS_TABLE_IS_COLOUR,
+	  .default_str = "#{?#{e|>=:#{client_colours},256},#7a8194,brightblack}",
+	  .text = "Light theme muted text colour (thememuted or @muted)."
+	},
+
+	{ .name = "light-theme-ok",
+	  .type = OPTIONS_TABLE_STRING,
+	  .scope = OPTIONS_TABLE_SERVER,
+	  .flags = OPTIONS_TABLE_IS_COLOUR,
+	  .default_str = "#{?#{e|>=:#{client_colours},256},#2e7d5b,green}",
+	  .text = "Light theme success colour (themeok or @ok)."
+	},
+
+	{ .name = "light-theme-warn",
+	  .type = OPTIONS_TABLE_STRING,
+	  .scope = OPTIONS_TABLE_SERVER,
+	  .flags = OPTIONS_TABLE_IS_COLOUR,
+	  .default_str = "#{?#{e|>=:#{client_colours},256},#a86b00,yellow}",
+	  .text = "Light theme warning colour (themewarn or @warn)."
+	},
+
+	{ .name = "light-theme-error",
+	  .type = OPTIONS_TABLE_STRING,
+	  .scope = OPTIONS_TABLE_SERVER,
+	  .flags = OPTIONS_TABLE_IS_COLOUR,
+	  .default_str = "#{?#{e|>=:#{client_colours},256},#c4314b,red}",
+	  .text = "Light theme error colour (themeerror or @error)."
 	},
 
 	{ .name = "light-theme-black",

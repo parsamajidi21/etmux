@@ -1701,6 +1701,42 @@ the file is parsed but no commands are executed.
 .Fl v
 shows the parsed commands and line numbers if possible.
 .Tg start
+.It Xo Ic source\-theme
+.Op Fl l
+.Op Ar theme
+.Xc
+Load a theme.
+.Ar theme
+is one of the built-in themes or a path to a file of commands, which is
+loaded as with
+.Ic source\-file .
+The built-in themes are:
+.Bl -tag -width "classic"
+.It Cm dark
+A modern look (rounded borders, a flat status line, inactive panes dimmed)
+using the dark theme colours.
+.It Cm light
+The same with the light theme colours.
+.It Cm auto
+The same, choosing dark or light from the background colour the terminal
+reports.
+.It Cm classic
+Return every option set by the other themes to its default.
+.El
+.Pp
+The built-in themes set styles only in terms of the semantic theme colours
+(such as
+.Ql @accent ) ,
+so changing the
+.Ic dark\-theme\-*
+and
+.Ic light\-theme\-*
+options changes their colours.
+With
+.Fl l
+or no
+.Ar theme ,
+list the built-in themes.
 .It Ic start\-server
 .D1 Pq alias: Ic start
 Start the
@@ -5123,8 +5159,22 @@ or force the light or dark theme.
 .Ic light\-theme\-yellow ,
 .Ic light\-theme\-red ,
 .Ic light\-theme\-blue ,
-.Ic light\-theme\-cyan
-.No and Ic light\-theme\-magenta Ar colour
+.Ic light\-theme\-cyan ,
+.Ic light\-theme\-magenta ,
+.Ic dark\-theme\-bg ,
+.Ic dark\-theme\-fg ,
+.Ic dark\-theme\-accent ,
+.Ic dark\-theme\-muted ,
+.Ic dark\-theme\-ok ,
+.Ic dark\-theme\-warn ,
+.Ic dark\-theme\-error ,
+.Ic light\-theme\-bg ,
+.Ic light\-theme\-fg ,
+.Ic light\-theme\-accent ,
+.Ic light\-theme\-muted ,
+.Ic light\-theme\-ok ,
+.Ic light\-theme\-warn
+.No and Ic light\-theme\-error Ar colour
 .Xc
 Set the theme colours.
 These are the named colours
@@ -5138,10 +5188,29 @@ These are the named colours
 .Cm themeblue ,
 .Cm themecyan
 and
-.Cm thememagenta
+.Cm thememagenta ,
+and the semantic colours
+.Cm themebg ,
+.Cm themefg ,
+.Cm themeaccent ,
+.Cm thememuted ,
+.Cm themeok ,
+.Cm themewarn
+and
+.Cm themeerror ,
 which may be used in styles and elsewhere a
 .Ar colour
 is accepted.
+Each may also be written with
+.Ql @
+in place of
+.Ql theme ,
+for example
+.Ql fg=@accent .
+The defaults use a true colour value when the client supports at least 256
+colours and a basic colour otherwise; true colour values are converted to
+the nearest colour the terminal supports.
+Changing a theme colour redraws everything that uses it.
 The
 .Ic dark\-theme\-*
 set is used when the client reports a dark background and the
