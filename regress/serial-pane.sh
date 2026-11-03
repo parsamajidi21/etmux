@@ -175,6 +175,27 @@ sleep 1
 $TMUX serial-reconnect -t "$pane" || fail "serial-reconnect failed"
 wait_for_fmt "$pane" '#{pane_serial_state}' 'connected'
 
+# With a client attached (the log directory comes from the pane's session,
+# not the client) and in a new window.
+if command -v script >/dev/null 2>&1; then
+	script -qfc "stty rows 20 cols 80; $TMUX attach -t s" /dev/null \
+		</dev/null >/dev/null 2>&1 &
+	sleep 1
+	pane2=$($TMUX new-serial -w -P -F '#{pane_id}' -t s "$OUT/host2" 2>&1)
+	case "$pane2" in
+	%*)	fail "opened a missing device" ;;
+	esac
+	stop_line
+	socat pty,raw,echo=0,link="$OUT/board" pty,raw,echo=0,link="$OUT/host2" \
+		2>/dev/null &
+	SOCAT=$!
+	sleep 0.5
+	pane2=$($TMUX new-serial -h -P -F '#{pane_id}' -t s:0 "$OUT/host2") || \
+		fail "new-serial with a client attached failed"
+	$TMUX has -t s || fail "server died with a client attached"
+	$TMUX kill-pane -t "$pane2"
+fi
+
 $TMUX respawn-pane -k -t "$pane" 2>/dev/null && \
 	fail "respawn-pane on a serial pane succeeded"
 $TMUX kill-pane -t "$pane" || fail "kill-pane failed"

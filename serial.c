@@ -654,7 +654,8 @@ void
 serial_pane_log_open(struct window_pane *wp)
 {
 	struct window_pane_serial	*ser = wp->serial;
-	struct session			*s;
+	struct winlink			*wl;
+	struct options			*oo;
 	const char			*dir, *home, *name;
 	char				*expanded, stamp[32], *path;
 	struct tm			 tm;
@@ -665,10 +666,13 @@ serial_pane_log_open(struct window_pane *wp)
 		ser->log_fd = -1;
 	}
 
-	s = wp->window->latest;
-	if (s == NULL && (s = RB_MIN(sessions, &sessions)) == NULL)
-		return;
-	dir = options_get_string(s->options, "serial-log-dir");
+	/* The session the pane's window is in (any, if linked to several). */
+	wl = TAILQ_FIRST(&wp->window->winlinks);
+	if (wl != NULL && wl->session != NULL)
+		oo = wl->session->options;
+	else
+		oo = global_s_options;
+	dir = options_get_string(oo, "serial-log-dir");
 	if (*dir == '\0')
 		return;
 	if (dir[0] == '~' && (dir[1] == '/' || dir[1] == '\0') &&
