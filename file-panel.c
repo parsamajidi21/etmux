@@ -20,6 +20,7 @@
 #include <sys/stat.h>
 
 #include <dirent.h>
+#include <fcntl.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
@@ -43,7 +44,7 @@ static enum cmd_retval	cmd_open_file_exec(struct cmd *, struct cmdq_item *);
 
 const struct cmd_entry cmd_open_file_entry = {
 	.name = "open-file",
-	.description = "Open a file in a new pane with the editor.",
+	.description = "Open a file or directory in a new window.",
 	.alias = NULL,
 
 	.args = { "i:t:", 0, 1, NULL },
@@ -176,13 +177,13 @@ file_panel_escape(const char *s)
 	return (out);
 }
 
-/* Markup for the file_panel format. */
+/* Markup for the file_panel format: every entry is a clickable range. */
 char *
 file_panel(struct window_pane *wp, struct session *s)
 {
 	struct options		*oo;
 	struct file_panel_entry	*list;
-	const char		*style, *dir_style, *code_style;
+	const char		*style, *dir_style, *code_style, *st;
 	char			*dir, *buf = NULL, *item, *name;
 	size_t			 len = 0;
 	u_int			 n, i, limit;
@@ -203,16 +204,14 @@ file_panel(struct window_pane *wp, struct session *s)
 	file_panel_append(&buf, &len, "");
 	for (i = 0; i < n && i < limit; i++) {
 		name = file_panel_escape(list[i].name);
-		if (list[i].dir) {
-			xasprintf(&item, "   #[%s]%s/#[default]#[nl]",
-			    dir_style, name);
-		} else if (file_panel_openable(list[i].name, oo)) {
-			xasprintf(&item, "#[range=user|f%u]   #[%s]%s"
-			    "#[default]#[norange]#[nl]", i, code_style, name);
-		} else {
-			xasprintf(&item, "   #[%s]%s#[default]#[nl]", style,
-			    name);
-		}
+		if (list[i].dir)
+			st = dir_style;
+		else if (file_panel_openable(list[i].name, oo))
+			st = code_style;
+		else
+			st = style;
+		xasprintf(&item, "#[range=user|f%u]   #[%s]%s%s#[default]"
+		    "#[norange]#[nl]", i, st, name, list[i].dir ? "/" : "");
 		file_panel_append(&buf, &len, item);
 		free(item);
 		free(name);
@@ -227,23 +226,91 @@ file_panel(struct window_pane *wp, struct session *s)
 	return (buf);
 }
 
-/* Replace %1 (path), %2 (directory) and %3 (editor), already escaped. */
-static char *
-file_panel_template(const char *template, const char *path, const char *dir,
-    const char *editor)
+/*
+ * Is the file binary? Look at the first 8 KiB: a NUL (as git decides), or
+ * more than 1 in 20 bytes being control characters other than the usual
+ * text ones (tab, newline, carriage return, form feed, backspace, escape)
+ * or not part of valid UTF-8.
+ */
+static int
+file_panel_binary(const char *path)
 {
-	const char	*s, *with;
+	u_char	 buf[8192];
+	ssize_t	 n, i, j, bad = 0, more;
+	int	 fd;
+
+	if ((fd = open(path, O_RDONLY|O_NONBLOCK)) == -1)
+		return (0);
+	n = read(fd, buf, sizeof buf);
+	close(fd);
+	if (n <= 0)
+		return (0);
+	for (i = 0; i < n; i++) {
+		if (buf[i] == '\0')
+			return (1);
+		if (buf[i] < 0x80) {
+			if ((buf[i] < 0x20 &&
+			    strchr("\t\n\r\f\b\033", buf[i]) == NULL) ||
+			    buf[i] == 0x7f)
+				bad++;
+			continue;
+		}
+		if (buf[i] >= 0xc2 && buf[i] <= 0xdf)
+			more = 1;
+		else if (buf[i] >= 0xe0 && buf[i] <= 0xef)
+			more = 2;
+		else if (buf[i] >= 0xf0 && buf[i] <= 0xf4)
+			more = 3;
+		else {
+			bad++;
+			continue;
+		}
+		for (j = 1; j <= more && i + j < n; j++) {
+			if ((buf[i + j] & 0xc0) != 0x80)
+				break;
+		}
+		if (j <= more && i + j < n)
+			bad++;
+		else
+			i += more;
+	}
+	return (bad * 20 > n);
+}
+
+/* Quote for sh(1): 'a'\''b'. */
+static char *
+file_panel_shell_quote(const char *s)
+{
+	char	*out, *cp;
+
+	out = cp = xmalloc(strlen(s) * 4 + 3);
+	*cp++ = '\'';
+	for (; *s != '\0'; s++) {
+		if (*s == '\'') {
+			memcpy(cp, "'\\''", 4);
+			cp += 4;
+		} else
+			*cp++ = *s;
+	}
+	*cp++ = '\'';
+	*cp = '\0';
+	return (out);
+}
+
+/* Replace %X in a template with the given strings. */
+static char *
+file_panel_template(const char *template, const char *keys,
+    const char **values)
+{
+	const char	*s, *with, *k;
 	char		*buf = NULL;
 	size_t		 len = 0, add;
 
 	for (s = template; *s != '\0'; s++) {
 		with = NULL;
-		if (s[0] == '%' && s[1] == '1')
-			with = path;
-		else if (s[0] == '%' && s[1] == '2')
-			with = dir;
-		else if (s[0] == '%' && s[1] == '3')
-			with = editor;
+		if (s[0] == '%' && s[1] != '\0' &&
+		    (k = strchr(keys, s[1])) != NULL)
+			with = values[k - keys];
 		if (with != NULL) {
 			add = strlen(with);
 			s++;
@@ -279,6 +346,52 @@ file_panel_editor(void)
 	return (out);
 }
 
+/* The command to open a path: editor, viewer, or a shell for directories. */
+static char *
+file_panel_command(struct session *s, const char *path, int is_dir)
+{
+	const char	*keys = "1";
+	const char	*values[1];
+	char		*quoted, *shell, *escaped, *editor, *cmd;
+
+	if (is_dir)
+		return (xstrdup(""));
+	if (file_panel_binary(path)) {
+		quoted = file_panel_shell_quote(path);
+		values[0] = quoted;
+		shell = file_panel_template(options_get_string(s->options,
+		    "file-view-command"), keys, values);
+		free(quoted);
+		cmd = args_escape(shell);
+		free(shell);
+		return (cmd);
+	}
+	editor = file_panel_editor();
+	escaped = args_escape(path);
+	xasprintf(&cmd, "%s %s", editor, escaped);
+	free(editor);
+	free(escaped);
+	return (cmd);
+}
+
+/* Find a window in the session already showing this path. */
+static struct winlink *
+file_panel_find(struct session *s, const char *path)
+{
+	struct winlink		*wl;
+	struct options_entry	*o;
+
+	RB_FOREACH(wl, winlinks, &s->windows) {
+		o = options_get_only(wl->window->options, "@open-file");
+		if (o == NULL)
+			continue;
+		if (strcmp(options_get_string(wl->window->options,
+		    "@open-file"), path) == 0)
+			return (wl);
+	}
+	return (NULL);
+}
+
 static enum cmd_retval
 cmd_open_file_exec(struct cmd *self, struct cmdq_item *item)
 {
@@ -286,10 +399,14 @@ cmd_open_file_exec(struct cmd *self, struct cmdq_item *item)
 	struct cmd_find_state	*target = cmdq_get_target(item);
 	struct session		*s = target->s;
 	struct file_panel_entry	*list;
+	struct winlink		*wl;
+	struct stat		 sb;
+	const char		*errstr, *name;
+	const char		*values[4];
 	char			*dir, *path = NULL, *cmd, *error, *value;
-	const char		*errstr;
-	char			*epath, *edir, *editor, *slash;
+	char			*epath, *edir, *ename, *command, *slash, *label;
 	u_int			 n, idx;
+	int			 is_dir;
 
 	if (args_has(args, 'i')) {
 		/* Expanded, so a binding can pass #{mouse_status_range}. */
@@ -306,7 +423,7 @@ cmd_open_file_exec(struct cmd *self, struct cmdq_item *item)
 			return (CMD_RETURN_ERROR);
 		}
 		n = file_panel_list(dir, &list);
-		if (idx >= n || list[idx].dir) {
+		if (idx >= n) {
 			cmdq_error(item, "no file %u in %s", idx, dir);
 			file_panel_free(list, n);
 			free(dir);
@@ -314,6 +431,7 @@ cmd_open_file_exec(struct cmd *self, struct cmdq_item *item)
 		}
 		xasprintf(&path, "%s/%s", dir, list[idx].name);
 		file_panel_free(list, n);
+		free(dir);
 	} else if (args_count(args) == 1) {
 		path = format_single_from_target(item, args_string(args, 0));
 		if (*path != '/' &&
@@ -323,25 +441,49 @@ cmd_open_file_exec(struct cmd *self, struct cmdq_item *item)
 			free(path);
 			path = cmd;
 		}
-		dir = xstrdup(path);
-		if ((slash = strrchr(dir, '/')) != NULL && slash != dir)
-			*slash = '\0';
 	} else {
 		cmdq_error(item, "no file given");
 		return (CMD_RETURN_ERROR);
 	}
+	is_dir = (stat(path, &sb) == 0 && S_ISDIR(sb.st_mode));
+
+	/* Already open: go to its window. */
+	if ((wl = file_panel_find(s, path)) != NULL) {
+		xasprintf(&cmd, "select-window -t @%u", wl->window->id);
+		goto run;
+	}
+
+	if (is_dir)
+		dir = xstrdup(path);
+	else {
+		dir = xstrdup(path);
+		if ((slash = strrchr(dir, '/')) != NULL && slash != dir)
+			*slash = '\0';
+	}
+	name = strrchr(path, '/');
+	name = (name != NULL && name[1] != '\0') ? name + 1 : path;
+	xasprintf(&label, "%s%s", name, is_dir ? "/" : "");
 
 	epath = args_escape(path);
 	edir = args_escape(dir);
-	editor = file_panel_editor();
+	ename = args_escape(label);
+	command = file_panel_command(s, path, is_dir);
+	values[0] = epath;
+	values[1] = edir;
+	values[2] = ename;
+	values[3] = command;
 	cmd = file_panel_template(options_get_string(s->options,
-	    "file-open-command"), epath, edir, editor);
+	    "file-open-command"), "fdnc", values);
 	free(epath);
 	free(edir);
-	free(editor);
-	free(path);
+	free(ename);
+	free(command);
+	free(label);
 	free(dir);
 
+run:
+	free(path);
+	log_debug("%s: %s", __func__, cmd);
 	error = NULL;
 	if (cmd_parse_and_insert(cmd, NULL, item, cmdq_get_state(item),
 	    &error) == CMD_PARSE_ERROR) {

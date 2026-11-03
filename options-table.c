@@ -1063,10 +1063,25 @@ const struct options_table_entry options_table[] = {
 	{ .name = "file-open-command",
 	  .type = OPTIONS_TABLE_STRING,
 	  .scope = OPTIONS_TABLE_SESSION,
-	  .default_str = "split-window -h -l 55% -c %2 %3 %1",
-	  .text = "Command run by 'open-file'. '%1' is replaced by the file, "
-		  "'%2' by its directory and '%3' by the 'editor' option, "
-		  "each quoted as a command argument."
+	  .default_str = "new-window -n %n -c %d %c ; set -w @open-file %f",
+	  .text = "Command run by 'open-file'. '%f' is replaced by the path, "
+		  "'%d' by its directory, '%n' by its name and '%c' by the "
+		  "command to show it (the editor for text, "
+		  "'file-view-command' for binary files, nothing for a "
+		  "directory), each quoted as command arguments."
+	},
+
+	{ .name = "file-view-command",
+	  .type = OPTIONS_TABLE_STRING,
+	  .scope = OPTIONS_TABLE_SESSION,
+	  .default_str = "{ file %1; echo; "
+			 "if [ \"$(head -c 4 %1)\" = \"$(printf '\\177ELF')\" ] && "
+			 "command -v readelf >/dev/null; then readelf -hlSW %1; "
+			 "elif command -v hexyl >/dev/null; then hexyl %1; "
+			 "elif command -v xxd >/dev/null; then xxd %1; "
+			 "else od -A x -t x1z %1; fi; } 2>&1 | less -R",
+	  .text = "Shell command used by 'open-file' to show a binary file. "
+		  "'%1' is replaced by the path, quoted for the shell."
 	},
 
 	{ .name = "file-panel-code-style",

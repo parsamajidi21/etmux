@@ -326,10 +326,22 @@ start directory or the session's).
   the name holds an index, not the path.
 
 **Command:** `open-file -i N` lists the directory again in the same order
-to find entry N, then runs `file-open-command`. That command has the path,
-the directory and the `editor` words substituted, each escaped as a tmux
-argument with `args_escape`, so no shell is involved and any file name is
-safe. The default splits the pane and runs the editor.
+to find entry N. If a window in the session has the `@open-file` window
+option set to that path, it is selected. Otherwise `file-open-command` runs
+with `%f` (path), `%d` (directory), `%n` (name) and `%c` (command)
+substituted, each escaped as tmux arguments with `args_escape`. The default
+opens a new window named after the file and sets `@open-file`.
+
+Choosing the command:
+- A directory gets a shell.
+- A text file gets the `editor` words plus the path, run directly with no
+  shell.
+- A binary file gets `file-view-command` with `%1` quoted for sh (`'..'\''..'`),
+  run by the shell.
+
+A file is binary if its first 8 KiB contain a NUL, or more than 1 in 20
+bytes are stray control characters or invalid UTF-8. That classifies UTF-8
+text with escape sequences as text, and random data with no NUL as binary.
 
 **Failure modes:**
 

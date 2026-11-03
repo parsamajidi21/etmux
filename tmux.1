@@ -1706,8 +1706,14 @@ shows the parsed commands and line numbers if possible.
 .Op Fl t Ar target\-pane
 .Op Ar path
 .Xc
-Open a file with
-.Ic file\-open\-command .
+Open a file or directory with
+.Ic file\-open\-command ,
+by default in a new window: a text file with the
+.Ic editor ,
+a binary file with
+.Ic file\-view\-command
+and a directory with a shell.
+If a window already shows it, that window is selected instead.
 With
 .Fl i ,
 open entry
@@ -1716,7 +1722,7 @@ of the list made by the
 .Ql file_panel
 format for
 .Ar target\-pane ;
-the format makes each file that can be opened a clickable range named
+the format makes each entry a clickable range named
 .Ql f
 followed by its index, so a mouse binding can use:
 .Bd -literal -offset indent
@@ -5341,17 +5347,28 @@ option.
 .It Ic file\-open\-command Ar command
 The command run by
 .Ic open\-file .
-.Ql %1
-is replaced by the file,
-.Ql %2
-by its directory and
-.Ql %3
-by the
+.Ql %f
+is replaced by the path,
+.Ql %d
+by its directory,
+.Ql %n
+by its name and
+.Ql %c
+by the command to show it: the
 .Ic editor
-option, each quoted as a command argument.
-The default opens the file with the editor in a new pane to the right.
+for a text file,
+.Ic file\-view\-command
+for a binary file and nothing (a shell) for a directory.
+Each is quoted as command arguments.
+The default opens a new window named after the file and sets the
+.Ql @open\-file
+window option, which
+.Ic open\-file
+uses to select the window if the file is opened again.
 .It Ic file\-panel\-code\-style Ar style
-Style of files that can be opened in the
+Style of source files (see
+.Ic file\-panel\-extensions )
+in the
 .Ql file_panel
 format.
 .It Ic file\-panel\-dir\-style Ar style
@@ -5359,7 +5376,9 @@ Style of directories in the
 .Ql file_panel
 format.
 .It Ic file\-panel\-extensions Ar extensions
-Space-separated extensions of the files that can be opened from the
+Space-separated extensions of the files highlighted with
+.Ic file\-panel\-code\-style
+in the
 .Ql file_panel
 format.
 .It Ic file\-panel\-limit Ar number
@@ -5370,6 +5389,19 @@ format.
 Style of other files in the
 .Ql file_panel
 format.
+.It Ic file\-view\-command Ar shell\-command
+The shell command used by
+.Ic open\-file
+to show a binary file;
+.Ql %1
+is replaced by the path, quoted for the shell.
+A file is binary if its first 8 KiB contain a NUL byte or more than one in
+twenty bytes are control characters or not valid UTF-8.
+The default shows
+.Xr file 1
+and then
+.Xr readelf 1
+for an ELF file, or a hex dump.
 .It Xo Ic focus\-follows\-mouse
 .Op Cm on | off
 .Xc
