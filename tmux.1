@@ -1706,14 +1706,16 @@ shows the parsed commands and line numbers if possible.
 .Op Fl t Ar target\-pane
 .Op Ar path
 .Xc
-Open a file or directory with
-.Ic file\-open\-command ,
-by default in a new window: a text file with the
+Open a file or directory, by default in a pane to the right of
+.Ar target\-pane
+(see
+.Ic file\-open\-mode ) :
+a text file with the
 .Ic editor ,
 a binary file with
 .Ic file\-view\-command
 and a directory with a shell.
-If a window already shows it, that window is selected instead.
+If it is already open, it is shown again instead.
 With
 .Fl i ,
 open entry
@@ -5365,10 +5367,32 @@ The default opens a new window named after the file and sets the
 window option, which
 .Ic open\-file
 uses to select the window if the file is opened again.
+.It Xo Ic file\-open\-mode
+.Op Cm right | window
+.Xc
+Where
+.Ic open\-file
+shows a file.
+With
+.Cm right
+(the default) it is shown in a pane to the right of the current pane, which
+stays where it is; opening another file moves the one shown there to a
+background window of its own (named after the file) and opening a file that
+is already open swaps it back in.
+With
+.Cm window ,
+each file opens with
+.Ic file\-open\-command .
+.It Ic file\-open\-width Ar percentage
+Width of the pane opened to the right; the default is 55.
 .It Xo Ic file\-open\-terminal
 .Op Ic on | off
 .Xc
-Whether
+With
+.Ic file\-open\-mode
+set to
+.Cm window ,
+whether
 .Ic open\-file
 adds a terminal pane in the file's directory below the editor or viewer
 (not for directories, which open with a shell).

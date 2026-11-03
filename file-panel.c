@@ -392,6 +392,102 @@ file_panel_find(struct session *s, const char *path)
 	return (NULL);
 }
 
+/* Find a pane in the session showing this path. */
+static struct window_pane *
+file_panel_find_pane(struct session *s, const char *path)
+{
+	struct winlink		*wl;
+	struct window_pane	*wp;
+
+	RB_FOREACH(wl, winlinks, &s->windows) {
+		TAILQ_FOREACH(wp, &wl->window->panes, entry) {
+			if (options_get_only(wp->options, "@open-file") == NULL)
+				continue;
+			if (strcmp(options_get_string(wp->options,
+			    "@open-file"), path) == 0)
+				return (wp);
+		}
+	}
+	return (NULL);
+}
+
+/* The pane in a window showing an opened file, if any. */
+static struct window_pane *
+file_panel_side_pane(struct window *w)
+{
+	struct window_pane	*wp;
+
+	TAILQ_FOREACH(wp, &w->panes, entry) {
+		if (options_get_only(wp->options, "@open-file") != NULL)
+			return (wp);
+	}
+	return (NULL);
+}
+
+/* Escaped base name of the file a pane shows, for its window name. */
+static char *
+file_panel_pane_name(struct window_pane *wp)
+{
+	const char	*path, *name;
+
+	path = options_get_string(wp->options, "@open-file");
+	name = strrchr(path, '/');
+	name = (name != NULL && name[1] != '\0') ? name + 1 : path;
+	return (args_escape(name));
+}
+
+/*
+ * Open beside the terminal: the file goes in a pane to the right of the
+ * target pane. A file already in that pane moves to a window of its own in
+ * the background, and a file already open elsewhere is swapped in.
+ */
+static char *
+file_panel_open_side(struct cmd_find_state *target, const char *path,
+    const char *edir, const char *command)
+{
+	struct window		*w = target->w;
+	struct window_pane	*e, *r;
+	char			*cmd, *epath, *rname;
+	u_int			 size;
+
+	size = options_get_number(target->s->options, "file-open-width");
+	e = file_panel_find_pane(target->s, path);
+	r = file_panel_side_pane(w);
+
+	if (e != NULL && e == r) {
+		xasprintf(&cmd, "select-pane -t %%%u", e->id);
+		return (cmd);
+	}
+	if (e != NULL && r != NULL) {
+		rname = file_panel_pane_name(r);
+		xasprintf(&cmd, "swap-pane -d -s %%%u -t %%%u ; "
+		    "rename-window -t @%u %s ; select-pane -t %%%u", e->id,
+		    r->id, e->window->id, rname, e->id);
+		free(rname);
+		return (cmd);
+	}
+	if (e != NULL) {
+		xasprintf(&cmd, "join-pane -h -l %u%% -s %%%u -t %%%u ; "
+		    "select-pane -t %%%u", size, e->id, target->wp->id, e->id);
+		return (cmd);
+	}
+
+	epath = args_escape(path);
+	if (r != NULL) {
+		rname = file_panel_pane_name(r);
+		xasprintf(&cmd, "split-window -h -t %%%u -c %s %s ; "
+		    "set -p @open-file %s ; break-pane -d -s %%%u -n %s",
+		    r->id, edir, command, epath, r->id, rname);
+		free(rname);
+	} else {
+		xasprintf(&cmd, "split-window -h -l %u%% -t %%%u -c %s %s ; "
+		    "set -p @open-file %s", size, target->wp->id, edir,
+		    command, epath);
+	}
+	free(epath);
+	return (cmd);
+}
+
 static enum cmd_retval
 cmd_open_file_exec(struct cmd *self, struct cmdq_item *item)
 {
@@ -447,7 +543,26 @@ cmd_open_file_exec(struct cmd *self, struct cmdq_item *item)
 	}
 	is_dir = (stat(path, &sb) == 0 && S_ISDIR(sb.st_mode));
 
-	/* Already open: go to its window. */
+	/* Beside the terminal (the default). */
+	if (options_get_number(s->options, "file-open-mode") == 0) {
+		if (is_dir)
+			dir = xstrdup(path);
+		else {
+			dir = xstrdup(path);
+			slash = strrchr(dir, '/');
+			if (slash != NULL && slash != dir)
+				*slash = '\0';
+		}
+		edir = args_escape(dir);
+		command = file_panel_command(s, path, is_dir);
+		cmd = file_panel_open_side(target, path, edir, command);
+		free(command);
+		free(edir);
+		free(dir);
+		goto run;
+	}
+
+	/* In a window of its own: if already open, go to its window. */
 	if ((wl = file_panel_find(s, path)) != NULL) {
 		xasprintf(&cmd, "select-window -t @%u", wl->window->id);
 		goto run;

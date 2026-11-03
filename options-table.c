@@ -121,6 +121,9 @@ static const char *options_table_serial_parity_list[] = {
 static const char *options_table_serial_timestamps_list[] = {
 	"off", "wallclock", "delta", NULL
 };
+static const char *options_table_file_open_mode_list[] = {
+	"right", "window", NULL
+};
 static const char *options_table_theme_list[] = {
 	"detect", "terminal", "light", "dark", NULL
 };
@@ -1084,12 +1087,22 @@ const struct options_table_entry options_table[] = {
 		  "'%1' is replaced by the path, quoted for the shell."
 	},
 
+	{ .name = "file-open-mode",
+	  .type = OPTIONS_TABLE_CHOICE,
+	  .scope = OPTIONS_TABLE_SESSION,
+	  .choices = options_table_file_open_mode_list,
+	  .default_num = 0,
+	  .text = "Where 'open-file' shows a file: in a pane to the right of "
+		  "the current pane, or in a window of its own using "
+		  "'file-open-command'."
+	},
+
 	{ .name = "file-open-terminal",
 	  .type = OPTIONS_TABLE_FLAG,
 	  .scope = OPTIONS_TABLE_SESSION,
 	  .default_num = 1,
-	  .text = "Whether 'open-file' adds a terminal pane in the file's "
-		  "directory below the editor or viewer."
+	  .text = "Whether 'open-file' in window mode adds a terminal pane "
+		  "in the file's directory below the editor or viewer."
 	},
 
 	{ .name = "file-open-terminal-size",
@@ -1100,6 +1113,16 @@ const struct options_table_entry options_table[] = {
 	  .default_num = 30,
 	  .unit = "percent",
 	  .text = "Height of the terminal pane added by 'open-file'."
+	},
+
+	{ .name = "file-open-width",
+	  .type = OPTIONS_TABLE_NUMBER,
+	  .scope = OPTIONS_TABLE_SESSION,
+	  .minimum = 10,
+	  .maximum = 90,
+	  .default_num = 55,
+	  .unit = "percent",
+	  .text = "Width of the pane 'open-file' opens to the right."
 	},
 
 	{ .name = "file-panel-code-style",
