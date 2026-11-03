@@ -1302,6 +1302,42 @@ struct visible_ranges {
 };
 
 /* Child window structure. */
+/* Serial pane settings and state. */
+#define SERIAL_FLOW_NONE 0
+#define SERIAL_FLOW_RTSCTS 1
+#define SERIAL_FLOW_XONXOFF 2
+#define SERIAL_PARITY_NONE 0
+#define SERIAL_PARITY_EVEN 1
+#define SERIAL_PARITY_ODD 2
+#define SERIAL_TIMESTAMPS_OFF 0
+#define SERIAL_TIMESTAMPS_WALLCLOCK 1
+#define SERIAL_TIMESTAMPS_DELTA 2
+enum serial_state {
+	SERIAL_DISCONNECTED,
+	SERIAL_CONNECTED
+};
+struct window_pane_serial {
+	struct window_pane	*wp;
+
+	char			*spec;		/* path or USB properties */
+	char			*device;	/* resolved path */
+
+	u_int			 baud;
+	int			 flow;
+	int			 parity;
+	u_int			 data_bits;
+	u_int			 stop_bits;
+
+	enum serial_state	 state;
+	struct event		 timer;		/* reconnect */
+
+	int			 line_start;
+	struct timeval		 last_line;
+
+	int			 log_fd;
+	char			*log_path;
+};
+
 struct window_pane {
 	u_int		 id;
 	int		 references;
@@ -1402,6 +1438,8 @@ struct window_pane {
 	pid_t		 pipe_pid;
 	struct bufferevent *pipe_event;
 	struct window_pane_offset pipe_offset;
+
+	struct window_pane_serial *serial;
 
 	struct screen	*screen;
 	struct screen	 base;
@@ -2550,6 +2588,9 @@ struct spawn_context {
 
 	int			  idx;
 	const char		 *cwd;
+
+	struct window_pane_serial *serial;	/* serial pane state */
+	int			  serial_fd;
 
 	int			  flags;
 #define SPAWN_KILL 0x1
@@ -4253,6 +4294,21 @@ void		 style_ranges_free(struct style_ranges *);
 struct style_range *style_ranges_get_range(struct style_ranges *, u_int);
 struct style_range *style_ranges_get_range_at(struct style_ranges *, u_int,
 		     u_int);
+
+/* serial.c */
+int		 serial_pane_speed(u_int, speed_t *);
+const char	*serial_pane_state(struct window_pane_serial *);
+char		*serial_pane_resolve(const char *, char **);
+struct window_pane_serial *serial_pane_create(const char *, struct options *);
+int		 serial_pane_configure(struct window_pane_serial *, int, char **);
+int		 serial_pane_open(struct window_pane_serial *, char **);
+void		 serial_pane_start(struct window_pane *);
+void		 serial_pane_disconnected(struct window_pane *);
+int		 serial_pane_reconnect(struct window_pane *, char **);
+int		 serial_pane_apply(struct window_pane *, char **);
+void		 serial_pane_log_open(struct window_pane *);
+void		 serial_pane_input(struct window_pane *, const u_char *, size_t);
+void		 serial_pane_free(struct window_pane_serial *);
 
 /* spawn.c */
 struct winlink	*spawn_window(struct spawn_context *, char **);

@@ -4377,6 +4377,139 @@ if
 is specified and the window is linked to only one session, it is unlinked and
 destroyed.
 .El
+.Sh SERIAL CONSOLES
+A serial pane is a pane connected to a serial device (such as a USB to
+UART adapter) instead of running a command.
+What the device sends is shown in the pane like the output of a command, so
+scrollback, copy mode, searching and
+.Ic pipe\-pane
+work as for any other pane, and keys typed in the pane are sent to the
+device.
+.Pp
+A device may be given as a path, for example
+.Pa /dev/ttyUSB0
+or a
+.Pa /dev/serial/by\-id
+link, or on Linux as a list of USB properties which are matched against
+sysfs:
+.Bd -literal -offset indent
+vid=0403,pid=6001,serial=A50285BI,if=2
+usb:0483:374b
+.Ed
+.Pp
+.Ql serial
+(also accepted as
+.Ql ID_SERIAL_SHORT )
+is the USB serial number and
+.Ql if
+the interface number.
+Properties are matched again each time the device is opened, so a pane
+finds its adapter even if it comes back with a different name.
+.Pp
+The device is opened with an advisory lock as other serial programs do, so
+it cannot be opened twice.
+The line settings come from the
+.Ic serial\-baud ,
+.Ic serial\-data\-bits ,
+.Ic serial\-flow ,
+.Ic serial\-parity
+and
+.Ic serial\-stop\-bits
+options when the pane is created.
+If the device goes away, the pane stays open and shows that it is
+disconnected; while the
+.Ic serial\-reconnect
+option is on,
+.Nm
+tries to open it again every half second.
+.Pp
+Serial pane commands are:
+.Bl -tag -width Ds
+.It Xo Ic choose\-serial
+.Op Fl B
+.Op Fl b Ar baud\-rate
+.Op Fl c Ar target\-client
+.Op Fl d Ar device
+.Op Fl t Ar target\-pane
+.Op Ar template
+.Xc
+Show a menu of the devices matching
+.Ic serial\-devices
+and run
+.Ar template
+(or
+.Ic serial\-command )
+for the one chosen.
+If a pane is already connected to the device, it is selected instead.
+With
+.Fl d ,
+open
+.Ar device
+without a menu.
+.Fl b
+overrides
+.Ic serial\-baud .
+.Fl B
+shows a menu to change
+.Ic serial\-baud
+instead.
+.Tg serial
+.It Xo Ic new\-serial
+.Op Fl bdfhPvw
+.Op Fl B Ar baud\-rate
+.Op Fl F Ar format
+.Op Fl l Ar size
+.Op Fl n Ar window\-name
+.Op Fl t Ar target\-pane
+.Ar device
+.Xc
+.D1 Pq alias: Ic serial
+Open
+.Ar device
+in a new pane.
+The pane is created by splitting
+.Ar target\-pane
+as for
+.Ic split\-window
+(and
+.Fl b ,
+.Fl d ,
+.Fl f ,
+.Fl h ,
+.Fl l
+and
+.Fl v
+have the same meaning), or in a new window named
+.Ar window\-name
+if
+.Fl w
+is given.
+.Fl B
+sets the baud rate instead of
+.Ic serial\-baud .
+.Fl P
+and
+.Fl F
+print information about the new pane as for
+.Ic split\-window .
+.It Xo Ic serial\-break
+.Op Fl t Ar target\-pane
+.Xc
+Send a break on the line of a serial pane.
+.It Xo Ic serial\-reconnect
+.Op Fl t Ar target\-pane
+.Xc
+Close and reopen the device of a serial pane.
+.It Xo Ic serial\-set
+.Op Fl b Ar baud\-rate
+.Op Fl D Ar data\-bits
+.Op Fl f Cm none | rtscts | xonxoff
+.Op Fl p Cm none | even | odd
+.Op Fl s Ar stop\-bits
+.Op Fl t Ar target\-pane
+.Xc
+Change the line settings of a serial pane.
+.El
 .Sh KEY BINDINGS
 .Nm
 allows a command to be bound to most keys, with or without a prefix key.
@@ -5635,6 +5768,63 @@ command.
 See also the
 .Ic initial\-repeat\-time
 option.
+.It Ic serial\-baud Ar rate
+Baud rate for new serial panes and for the
+.Ic serial\-command
+used by
+.Ic choose\-serial .
+The default is 115200.
+.It Ic serial\-command Ar command
+The command run by
+.Ic choose\-serial
+to open a console on a device.
+.Ql %1
+is replaced by the device path,
+.Ql %2
+by its name and
+.Ql %3
+by
+.Ic serial\-baud .
+The default opens a serial pane with
+.Ic new\-serial .
+.It Ic serial\-data\-bits Ar bits
+Data bits (5 to 8) for new serial panes.
+.It Ic serial\-device\-active\-style Ar style
+Style of a device with an open console in the
+.Ql serial_bar
+and
+.Ql serial_panel
+formats.
+.It Ic serial\-device\-style Ar style
+Style of a device in the
+.Ql serial_bar
+and
+.Ql serial_panel
+formats.
+.It Ic serial\-devices Ar patterns
+Space-separated
+.Xr glob 7
+patterns of the devices listed by
+.Ic choose\-serial
+and the serial formats.
+The default is
+.Ql /dev/ttyUSB* /dev/ttyACM* .
+.It Xo Ic serial\-flow
+.Op Cm none | rtscts | xonxoff
+.Xc
+Flow control for new serial panes.
+.It Ic serial\-log\-dir Ar directory
+If set, each serial pane writes everything it receives to a log file in
+.Ar directory ,
+named after the device and the time.
+A new file is started when a new boot is detected (see
+.Sx SERIAL CONSOLES ) .
+.It Xo Ic serial\-parity
+.Op Cm none | even | odd
+.Xc
+Parity for new serial panes.
+.It Ic serial\-stop\-bits Ar bits
+Stop bits (1 or 2) for new serial panes.
 .It Xo Ic set\-titles
 .Op Cm on | off
 .Xc
@@ -5666,6 +5856,15 @@ colours, draws a vertical line on the edge next to the window area and is
 updated every
 .Ic status\-interval
 seconds like the status line.
+.It Xo Ic side\-status\-animation
+.Op Ic on | off
+.Xc
+Whether
+.Ic toggle\-side\-status
+slides the side status line in and out.
+.It Ic side\-status\-border\-style Ar style
+Set the style of the line between the side status line and the window
+area.
 .It Ic side\-status\-format Ar format
 Specify the format used for the side status line.
 The format may produce multiple rows using the
@@ -6536,6 +6735,19 @@ see the
 .Sx STYLES
 section.
 .Pp
+.It Xo Ic serial\-reconnect
+.Op Ic on | off
+.Xc
+Whether a serial pane reopens its device when it comes back after being
+disconnected.
+The default is on.
+.It Xo Ic serial\-timestamps
+.Op Cm off | wallclock | delta
+.Xc
+Prefix each line received by a serial pane with the time it arrived
+.Pq Cm wallclock
+or the time since the previous line
+.Pq Cm delta .
 .It Xo Ic synchronize\-panes
 .Op Cm on | off
 .Xc
@@ -6704,6 +6916,12 @@ Run when a prompt in a pane is closed.
 Run when a prompt is opened in a pane.
 .It pane\-resized
 Run when a pane is resized.
+.It pane\-serial\-connected
+Run when a serial pane's device is opened again.
+The device path is available as
+.Ql hook_serial_device .
+.It pane\-serial\-disconnected
+Run when a serial pane's device goes away.
 .It pane\-set\-clipboard
 Run when the terminal clipboard is set using the
 .Xr xterm 1
@@ -7628,6 +7846,10 @@ The following variables are available, where appropriate:
 .It Li "pane_pb_progress" Ta "" Ta "Pane progress bar progress percentage (can be set by application)"
 .It Li "pane_right" Ta "" Ta "Right of pane"
 .It Li "pane_search_string" Ta "" Ta "Last search string in copy mode"
+.It Li "pane_serial" Ta "" Ta "1 if pane is a serial pane"
+.It Li "pane_serial_baud" Ta "" Ta "Baud rate of serial pane"
+.It Li "pane_serial_device" Ta "" Ta "Device of serial pane"
+.It Li "pane_serial_state" Ta "" Ta "Serial pane state, connected or disconnected"
 .It Li "pane_start_command" Ta "" Ta "Command pane started with"
 .It Li "pane_start_command_list" Ta "" Ta "Command pane started with, quoted"
 .It Li "pane_start_path" Ta "" Ta "Path pane started with"
@@ -7665,6 +7887,10 @@ The following variables are available, where appropriate:
 .It Li "selection_present" Ta "" Ta "1 if selection started in copy mode"
 .It Li "selection_start_x" Ta "" Ta "X position of the start of the selection"
 .It Li "selection_start_y" Ta "" Ta "Y position of the start of the selection"
+.It Li "serial_bar" Ta "" Ta "Serial devices as clickable status line ranges"
+.It Li "serial_device_count" Ta "" Ta "Number of serial devices"
+.It Li "serial_open_count" Ta "" Ta "Number of serial devices with an open console"
+.It Li "serial_panel" Ta "" Ta "Serial devices as rows for the side status line"
 .It Li "server_sessions" Ta "" Ta "Number of sessions"
 .It Li "session_active" Ta "" Ta "1 if session active"
 .It Li "session_activity" Ta "" Ta "Time of session last activity"
@@ -8339,6 +8565,20 @@ changes the confirmation key to
 the default is
 .Ql y .
 .Tg menu
+.It Xo Ic toggle\-side\-status
+.Op Fl n
+.Op Fl t Ar target\-session
+.Xc
+Show or hide the side status line (see the
+.Ic side\-status
+option).
+Unless
+.Fl n
+is given or
+.Ic side\-status\-animation
+is off, it slides in or out by stepping
+.Ic side\-status\-width .
+When shown again it returns to the side it was on.
 .It Xo Ic display\-menu
 .Op Fl OM
 .Op Fl b Ar border\-lines

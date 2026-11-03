@@ -112,6 +112,15 @@ static const char *options_table_extended_keys_format_list[] = {
 static const char *options_table_allow_passthrough_list[] = {
 	"off", "on", "all", NULL
 };
+static const char *options_table_serial_flow_list[] = {
+	"none", "rtscts", "xonxoff", NULL
+};
+static const char *options_table_serial_parity_list[] = {
+	"none", "even", "odd", NULL
+};
+static const char *options_table_serial_timestamps_list[] = {
+	"off", "wallclock", "delta", NULL
+};
 static const char *options_table_theme_list[] = {
 	"detect", "terminal", "light", "dark", NULL
 };
@@ -1083,12 +1092,19 @@ const struct options_table_entry options_table[] = {
 	{ .name = "serial-command",
 	  .type = OPTIONS_TABLE_STRING,
 	  .scope = OPTIONS_TABLE_SESSION,
-	  .default_str = "split-window -h -l 45% 'exec picocom -b %3 %1' ; "
-			 "select-pane -T '%2 @ %3' ; "
-			 "set -p remain-on-exit failed",
+	  .default_str = "new-serial -h -l 45% -B %3 '%1'",
 	  .text = "Command run by 'choose-serial' to open a console. '%1' is "
 		  "replaced by the device path, '%2' by the device name and "
 		  "'%3' by the baud rate."
+	},
+
+	{ .name = "serial-data-bits",
+	  .type = OPTIONS_TABLE_NUMBER,
+	  .scope = OPTIONS_TABLE_SESSION,
+	  .minimum = 5,
+	  .maximum = 8,
+	  .default_num = 8,
+	  .text = "Data bits for new serial panes."
 	},
 
 	{ .name = "serial-device-active-style",
@@ -1111,6 +1127,39 @@ const struct options_table_entry options_table[] = {
 	  .default_str = "/dev/ttyUSB* /dev/ttyACM*",
 	  .text = "Space-separated glob patterns of serial devices shown by "
 		  "'choose-serial' and '#{serial_bar}'."
+	},
+
+	{ .name = "serial-flow",
+	  .type = OPTIONS_TABLE_CHOICE,
+	  .scope = OPTIONS_TABLE_SESSION,
+	  .choices = options_table_serial_flow_list,
+	  .default_num = SERIAL_FLOW_NONE,
+	  .text = "Flow control for new serial panes."
+	},
+
+	{ .name = "serial-log-dir",
+	  .type = OPTIONS_TABLE_STRING,
+	  .scope = OPTIONS_TABLE_SESSION,
+	  .default_str = "",
+	  .text = "Directory for serial pane logs. If empty, no logs are "
+		  "written. A new log file is started on each detected boot."
+	},
+
+	{ .name = "serial-parity",
+	  .type = OPTIONS_TABLE_CHOICE,
+	  .scope = OPTIONS_TABLE_SESSION,
+	  .choices = options_table_serial_parity_list,
+	  .default_num = SERIAL_PARITY_NONE,
+	  .text = "Parity for new serial panes."
+	},
+
+	{ .name = "serial-stop-bits",
+	  .type = OPTIONS_TABLE_NUMBER,
+	  .scope = OPTIONS_TABLE_SESSION,
+	  .minimum = 1,
+	  .maximum = 2,
+	  .default_num = 1,
+	  .text = "Stop bits for new serial panes."
 	},
 
 	{ .name = "set-titles",
@@ -1898,6 +1947,24 @@ const struct options_table_entry options_table[] = {
 	  .text = "Style of matched characters in switch mode."
 	},
 
+	{ .name = "serial-reconnect",
+	  .type = OPTIONS_TABLE_FLAG,
+	  .scope = OPTIONS_TABLE_WINDOW|OPTIONS_TABLE_PANE,
+	  .default_num = 1,
+	  .text = "Whether a serial pane reopens its device when it comes "
+		  "back after being disconnected."
+	},
+
+	{ .name = "serial-timestamps",
+	  .type = OPTIONS_TABLE_CHOICE,
+	  .scope = OPTIONS_TABLE_WINDOW|OPTIONS_TABLE_PANE,
+	  .choices = options_table_serial_timestamps_list,
+	  .default_num = SERIAL_TIMESTAMPS_OFF,
+	  .text = "Whether to prefix each line of serial pane output with the "
+		  "time it arrived ('wallclock') or the time since the "
+		  "previous line ('delta')."
+	},
+
 	{ .name = "synchronize-panes",
 	  .type = OPTIONS_TABLE_FLAG,
 	  .scope = OPTIONS_TABLE_WINDOW|OPTIONS_TABLE_PANE,
@@ -2199,6 +2266,10 @@ const struct options_table_entry options_table[] = {
 	    "Run when a prompt is opened in a pane."),
 	OPTIONS_TABLE_PANE_HOOK("pane-resized", "",
 	    "Run when a pane is resized."),
+	OPTIONS_TABLE_PANE_HOOK("pane-serial-connected", "",
+	    "Run when a serial pane's device is opened again."),
+	OPTIONS_TABLE_PANE_HOOK("pane-serial-disconnected", "",
+	    "Run when a serial pane's device goes away."),
 	OPTIONS_TABLE_PANE_HOOK("pane-set-clipboard", "",
 	    "Run when the terminal clipboard is set using the xterm escape "
 	    "sequence."),

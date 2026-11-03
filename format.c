@@ -2273,6 +2273,44 @@ format_cb_pane_bottom(struct format_tree *ft)
 	return (NULL);
 }
 
+/* Callback for pane_serial. */
+static void *
+format_cb_pane_serial(struct format_tree *ft)
+{
+	if (ft->wp == NULL)
+		return (NULL);
+	return (xstrdup(ft->wp->serial != NULL ? "1" : "0"));
+}
+
+/* Callback for pane_serial_baud. */
+static void *
+format_cb_pane_serial_baud(struct format_tree *ft)
+{
+	if (ft->wp == NULL || ft->wp->serial == NULL)
+		return (NULL);
+	return (format_printf("%u", ft->wp->serial->baud));
+}
+
+/* Callback for pane_serial_device. */
+static void *
+format_cb_pane_serial_device(struct format_tree *ft)
+{
+	struct window_pane_serial	*ser;
+
+	if (ft->wp == NULL || (ser = ft->wp->serial) == NULL)
+		return (NULL);
+	return (xstrdup(ser->device != NULL ? ser->device : ser->spec));
+}
+
+/* Callback for pane_serial_state. */
+static void *
+format_cb_pane_serial_state(struct format_tree *ft)
+{
+	if (ft->wp == NULL || ft->wp->serial == NULL)
+		return (NULL);
+	return (xstrdup(serial_pane_state(ft->wp->serial)));
+}
+
 /* Callback for pane_dead. */
 static void *
 format_cb_pane_dead(struct format_tree *ft)
@@ -4033,6 +4071,18 @@ static const struct format_table_entry format_table[] = {
 	},
 	{ "pane_search_string", FORMAT_TABLE_STRING,
 	  format_cb_pane_search_string
+	},
+	{ "pane_serial", FORMAT_TABLE_STRING,
+	  format_cb_pane_serial
+	},
+	{ "pane_serial_baud", FORMAT_TABLE_STRING,
+	  format_cb_pane_serial_baud
+	},
+	{ "pane_serial_device", FORMAT_TABLE_STRING,
+	  format_cb_pane_serial_device
+	},
+	{ "pane_serial_state", FORMAT_TABLE_STRING,
+	  format_cb_pane_serial_state
 	},
 	{ "pane_start_command", FORMAT_TABLE_STRING,
 	  format_cb_start_command

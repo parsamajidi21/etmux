@@ -164,6 +164,9 @@ serial_find_pane(const char *path)
 
 	RB_FOREACH(w, windows, &windows) {
 		TAILQ_FOREACH(wp, &w->panes, entry) {
+			if (wp->serial != NULL && wp->serial->device != NULL &&
+			    strcmp(wp->serial->device, path) == 0)
+				return (wp);
 			if (wp->fd == -1)
 				continue;
 			for (i = 0; i < wp->argc; i++) {

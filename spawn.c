@@ -273,6 +273,11 @@ spawn_pane(struct spawn_context *sc, char **cause)
 
 	spawn_log(__func__, sc);
 
+	if ((sc->flags & SPAWN_RESPAWN) && sc->wp0->serial != NULL) {
+		xasprintf(cause, "pane is a serial pane, use serial-reconnect");
+		return (NULL);
+	}
+
 	if (sc->flags & SPAWN_MODAL) {
 		if (~sc->flags & SPAWN_FLOATING) {
 			xasprintf(cause, "modal pane must be floating");
@@ -459,6 +464,17 @@ spawn_pane(struct spawn_context *sc, char **cause)
 	sigfillset(&set);
 	sigprocmask(SIG_BLOCK, &set, &oldset);
 
+	/* A serial pane uses the already opened device instead of a child. */
+	if (sc->serial != NULL) {
+		new_wp->flags &= ~PANE_EMPTY;
+		new_wp->pid = 0;
+		*new_wp->tty = '\0';
+		new_wp->fd = sc->serial_fd;
+		new_wp->serial = sc->serial;
+		sc->serial = NULL;
+		goto complete;
+	}
+
 	/* If the command is empty, don't fork a child process. */
 	if (sc->flags & SPAWN_EMPTY) {
 		new_wp->flags |= PANE_EMPTY;
@@ -586,6 +602,8 @@ complete:
 
 	sigprocmask(SIG_SETMASK, &oldset, NULL);
 	window_pane_set_event(new_wp);
+	if (new_wp->serial != NULL)
+		serial_pane_start(new_wp);
 	environ_free(child);
 	spawn_fire_pane_created(sc, new_wp);
 

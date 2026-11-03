@@ -73,6 +73,7 @@ extern const struct cmd_entry cmd_lock_session_entry;
 extern const struct cmd_entry cmd_move_pane_entry;
 extern const struct cmd_entry cmd_move_window_entry;
 extern const struct cmd_entry cmd_new_pane_entry;
+extern const struct cmd_entry cmd_new_serial_entry;
 extern const struct cmd_entry cmd_new_session_entry;
 extern const struct cmd_entry cmd_new_window_entry;
 extern const struct cmd_entry cmd_next_layout_entry;
@@ -97,6 +98,9 @@ extern const struct cmd_entry cmd_select_window_entry;
 extern const struct cmd_entry cmd_send_keys_entry;
 extern const struct cmd_entry cmd_send_prefix_entry;
 extern const struct cmd_entry cmd_server_access_entry;
+extern const struct cmd_entry cmd_serial_break_entry;
+extern const struct cmd_entry cmd_serial_reconnect_entry;
+extern const struct cmd_entry cmd_serial_set_entry;
 extern const struct cmd_entry cmd_set_buffer_entry;
 extern const struct cmd_entry cmd_set_environment_entry;
 extern const struct cmd_entry cmd_set_hook_entry;
@@ -169,6 +173,7 @@ const struct cmd_entry *cmd_table[] = {
 	&cmd_move_pane_entry,
 	&cmd_move_window_entry,
 	&cmd_new_pane_entry,
+	&cmd_new_serial_entry,
 	&cmd_new_session_entry,
 	&cmd_new_window_entry,
 	&cmd_next_layout_entry,
@@ -193,6 +198,9 @@ const struct cmd_entry *cmd_table[] = {
 	&cmd_send_keys_entry,
 	&cmd_send_prefix_entry,
 	&cmd_server_access_entry,
+	&cmd_serial_break_entry,
+	&cmd_serial_reconnect_entry,
+	&cmd_serial_set_entry,
 	&cmd_set_buffer_entry,
 	&cmd_set_environment_entry,
 	&cmd_set_hook_entry,

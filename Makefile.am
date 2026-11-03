@@ -123,6 +123,7 @@ dist_tmux_SOURCES = \
 	cmd-load-buffer.c \
 	cmd-lock-server.c \
 	cmd-move-window.c \
+	cmd-new-serial.c \
 	cmd-new-session.c \
 	cmd-new-window.c \
 	cmd-parse.y \
@@ -144,6 +145,7 @@ dist_tmux_SOURCES = \
 	cmd-select-window.c \
 	cmd-send-keys.c \
 	cmd-server-access.c \
+	cmd-serial.c \
 	cmd-set-buffer.c \
 	cmd-set-environment.c \
 	cmd-set-option.c \
@@ -204,6 +206,7 @@ dist_tmux_SOURCES = \
 	server-acl.c \
 	server-client.c \
 	server-fn.c \
+	serial.c \
 	server.c \
 	session.c \
 	sort.c \

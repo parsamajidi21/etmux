@@ -602,7 +602,7 @@ window_pane_send_resize(struct window_pane *wp, u_int sx, u_int sy)
 	struct window	*w = wp->window;
 	struct winsize	 ws;
 
-	if (wp->fd == -1)
+	if (wp->fd == -1 || wp->serial != NULL)
 		return;
 
 	log_debug("%s: %%%u resize to %u,%u", __func__, wp->id, sx, sy);
@@ -1596,7 +1596,7 @@ window_pane_utmp_add(struct window_pane *wp)
 {
 	char	*cp;
 
-	if (wp->fd == -1 ||
+	if (wp->fd == -1 || wp->serial != NULL ||
 	    (wp->flags & (PANE_EMPTY|PANE_EXITED|PANE_UTMP)) ||
 	    !options_get_number(global_options, "utmp"))
 		return;
@@ -1642,6 +1642,9 @@ window_pane_destroy(struct window_pane *wp)
 
 	window_pane_free_modes(wp);
 	screen_write_sync_clear_dirty(wp);
+
+	serial_pane_free(wp->serial);
+	wp->serial = NULL;
 
 	if (wp->event != NULL) {
 		bufferevent_free(wp->event);
@@ -1730,6 +1733,10 @@ window_pane_error_callback(__unused struct bufferevent *bufev,
 	struct window_pane *wp = data;
 
 	log_debug("%%%u error", wp->id);
+	if (wp->serial != NULL) {
+		serial_pane_disconnected(wp);
+		return;
+	}
 	wp->flags |= PANE_EXITED;
 
 	if (window_pane_destroy_ready(wp))
